@@ -5,7 +5,8 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import express from "express";
 import cors from "cors";
-import healthRoute from "./routes/health";
+import routes from "./routes";
+import { errorHandler, notFoundHandler } from "./middlewares/error-handler";
 
 const app = express();
 
@@ -33,12 +34,17 @@ app.use(
 );
 
 app.use(express.json());
-app.use("/api", healthRoute);
+app.use("/api", routes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 const port = Number(process.env.PORT ?? 3001);
 
-app.listen(port, () => {
-  console.log(`Servidor da API iniciado em http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(port, () => {
+    console.log(`Servidor da API iniciado em http://localhost:${port}`);
+  });
+}
 
 export default app;
