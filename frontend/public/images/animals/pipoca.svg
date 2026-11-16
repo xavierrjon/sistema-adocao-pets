@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Ilustração da calopsita Pipoca">
+  
+  <defs>
+    <linearGradient id="bg-pipoca" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E7F4FD" />
+      <stop offset="1" stop-color="#CFE8FA" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg-pipoca)" />
+  <circle cx="52" cy="58" r="26" fill="#ffffff" opacity="0.4" />
+  <circle cx="352" cy="248" r="32" fill="#ffffff" opacity="0.35" />
+  <circle cx="318" cy="52" r="14" fill="#ffffff" opacity="0.4" />
+  <ellipse cx="200" cy="205" rx="88" ry="72" fill="#A8B3C2" />
+  <ellipse cx="136" cy="205" rx="38" ry="54" fill="#8E9AAD" transform="rotate(20 136 205)" />
+  <ellipse cx="264" cy="205" rx="38" ry="54" fill="#8E9AAD" transform="rotate(-20 264 205)" />
+  <ellipse cx="200" cy="228" rx="52" ry="42" fill="#C6CFDB" opacity="0.9" />
+  <path d="M182 276 L182 290" stroke="#E5A62E" stroke-width="7" stroke-linecap="round" />
+  <path d="M218 276 L218 290" stroke="#E5A62E" stroke-width="7" stroke-linecap="round" />
+  <circle cx="200" cy="112" r="54" fill="#F7D154" />
+  <ellipse cx="172" cy="62" rx="11" ry="32" fill="#F7B843" transform="rotate(-24 172 62)" />
+  <ellipse cx="200" cy="52" rx="11" ry="36" fill="#F7B843" />
+  <ellipse cx="228" cy="62" rx="11" ry="32" fill="#F7B843" transform="rotate(24 228 62)" />
+  <circle cx="168" cy="120" r="14" fill="#F59E42" />
+  <circle cx="232" cy="120" r="14" fill="#F59E42" />
+  <circle cx="184" cy="104" r="7" fill="#42342B" />
+  <circle cx="181.5" cy="101.5" r="2.5" fill="#ffffff" opacity="0.9" />
+  <circle cx="216" cy="104" r="7" fill="#42342B" />
+  <circle cx="213.5" cy="101.5" r="2.5" fill="#ffffff" opacity="0.9" />
+  <path d="M200 116 L189 134 Q200 147 211 134 Z" fill="#B7BEC7" />
+</svg>

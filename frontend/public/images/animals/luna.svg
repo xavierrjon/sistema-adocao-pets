@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Ilustração da gata Luna">
+  
+  <defs>
+    <linearGradient id="bg-luna" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E4F0FF" />
+      <stop offset="1" stop-color="#CFE3FF" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg-luna)" />
+  <circle cx="52" cy="58" r="26" fill="#ffffff" opacity="0.4" />
+  <circle cx="352" cy="248" r="32" fill="#ffffff" opacity="0.35" />
+  <circle cx="318" cy="52" r="14" fill="#ffffff" opacity="0.4" />
+  <ellipse cx="136" cy="86" rx="36" ry="46" fill="#7C5C43" transform="rotate(-20 136 86)" />
+  <ellipse cx="136" cy="86" rx="18" ry="28" fill="#F5A8A0" opacity="0.85" transform="rotate(-20 136 86)" />
+  <ellipse cx="264" cy="86" rx="36" ry="46" fill="#7C5C43" transform="rotate(20 264 86)" />
+  <ellipse cx="264" cy="86" rx="18" ry="28" fill="#F5A8A0" opacity="0.85" transform="rotate(20 264 86)" />
+  <circle cx="200" cy="170" r="92" fill="#F3E8D7" />
+  <ellipse cx="166" cy="160" rx="12" ry="16" fill="#42342B" />
+  <circle cx="170.5" cy="154" r="4" fill="#ffffff" opacity="0.9" />
+  <ellipse cx="234" cy="160" rx="12" ry="16" fill="#42342B" />
+  <circle cx="238.5" cy="154" r="4" fill="#ffffff" opacity="0.9" />
+  <circle cx="138" cy="192" r="11" fill="#F5A8A0" opacity="0.35" />
+  <circle cx="262" cy="192" r="11" fill="#F5A8A0" opacity="0.35" />
+  <path d="M200 182 L190 194 Q200 203 210 194 Z" fill="#7C5C43" />
+  <path d="M200 203 Q191 213 181 207" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M200 203 Q209 213 219 207" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <g stroke="#42342B" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.3">
+    <path d="M118 186 Q88 182 60 176" />
+    <path d="M118 198 Q86 200 58 204" />
+    <path d="M282 186 Q312 182 340 176" />
+    <path d="M282 198 Q314 200 342 204" />
+  </g>
+  <path d="M136 240 Q200 296 264 240" stroke="#16A34A" stroke-width="16" stroke-linecap="round" fill="none" />
+  <circle cx="200" cy="278" r="11" fill="#FFD166" stroke="#D9A930" stroke-width="3" />
+</svg>
