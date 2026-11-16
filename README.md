@@ -120,6 +120,31 @@ Resposta esperada:
 }
 ```
 
+### Endpoints disponíveis
+
+```text
+GET    /api/health
+GET    /api/animals
+GET    /api/animals/:id
+POST   /api/animals
+PUT    /api/animals/:id
+DELETE /api/animals/:id
+GET    /api/users/:id
+```
+
+## Banco de dados
+
+Após configurar o `.env` e iniciar o PostgreSQL:
+
+```bash
+cd backend
+npx prisma validate
+npx prisma migrate dev
+npx prisma studio
+```
+
+A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas.
+
 ## Scripts úteis
 
 Na raiz do repositório:
@@ -130,6 +155,7 @@ Na raiz do repositório:
 
 Em `backend/`:
 
+- `npm test` — executa os testes da API
 - `npm run db:validate` — valida a conexão do Prisma com o PostgreSQL
 
 ## Fluxo de branches
@@ -152,7 +178,3 @@ O **GitHub Actions** executa, para cada Pull Request e push em `develop`/`main`:
 - Build
 
 A publicação do frontend é feita na **Vercel** (`develop` → ambiente de desenvolvimento, `main` → produção).
-
-## Objetivo acadêmico
-
-Projeto desenvolvido para a disciplina de **Gerência de Configuração e DevOps**, com foco na aplicação prática de gerência de configuração, controle de versão, integração contínua e entrega contínua.
