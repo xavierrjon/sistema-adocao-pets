@@ -1,6 +1,3 @@
-// O Prisma Schema será preenchido na etapa de modelagem do domínio.
-// A conexão com o PostgreSQL é validada em `src/lib/validate-database-connection.ts`.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,4 +5,42 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum AnimalStatus {
+  DISPONIVEL
+  EM_PROCESSO
+  ADOTADO
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  whatsapp  String
+  animals   Animal[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Animal {
+  id          String       @id @default(uuid())
+  name        String
+  species     String
+  breed       String
+  sex         String
+  size        String
+  description String
+  status      AnimalStatus @default(DISPONIVEL)
+  whatsapp    String
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@map("animals")
 }
