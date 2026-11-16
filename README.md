@@ -4,7 +4,7 @@ Plataforma web para divulgação e adoção responsável de animais.
 
 O **AdoteJá** conecta pessoas interessadas em adotar animais a responsáveis que desejam encontrar um novo lar para seus pets, oferecendo uma experiência simples para visualizar, pesquisar e cadastrar animais para adoção.
 
-## Funcionalidades
+## Funcionalidades planejadas
 
 - Cadastro e autenticação de usuários
 - Listagem de animais disponíveis
@@ -15,81 +15,144 @@ O **AdoteJá** conecta pessoas interessadas em adotar animais a responsáveis qu
 - Contato com o responsável através do WhatsApp
 - Interface responsiva
 
-## Tecnologias
+## Stack
 
-- **Next.js**
-- **React**
-- **TypeScript**
-- **Tailwind CSS**
-- **Node.js**
-- **Express**
-- **PostgreSQL**
-- **Prisma**
-- **Git & GitHub**
-- **GitHub Actions**
-- **Vercel**
+**Frontend:** Next.js, React, TypeScript, Tailwind CSS
+**Backend:** Node.js, Express, TypeScript
+**Banco:** PostgreSQL, Prisma
+**DevOps:** Docker Compose, GitHub Actions, Vercel
 
-## Executando o projeto
+## Arquitetura resumida
 
-Clone o repositório:
-
-```bash
-git clone <URL_DO_REPOSITORIO>
-cd adoteja
+```text
+Frontend (Next.js)  ──HTTP/REST──▶  Backend (Express)
+                                        │
+                                   Routes → Controllers → Services
+                                        │
+                                      Prisma
+                                        │
+                                  PostgreSQL (Docker)
 ```
 
-Instale as dependências:
+O frontend e o backend são aplicações independentes dentro do mesmo repositório (monorepo). O PostgreSQL é executado localmente via Docker Compose; frontend e backend rodam diretamente no Node.js durante o desenvolvimento.
+
+## Pré-requisitos
+
+- Node.js 22+ e npm
+- Docker e Docker Compose
+- Git
+
+## Instalação
 
 ```bash
+git clone git@github.com:xavierrjon/sistema-adocao-pets.git
+cd sistema-adocao-pets
+cp .env.example .env
 npm install
 ```
 
-Configure as variáveis de ambiente conforme o arquivo `.env.example`.
+## Configuração das variáveis de ambiente
 
-Execute o projeto em desenvolvimento:
+Edite o arquivo `.env` na raiz do projeto:
+
+```env
+POSTGRES_USER=adoteja
+POSTGRES_PASSWORD=defina-uma-senha
+POSTGRES_DB=adoteja
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql://adoteja:defina-uma-senha@localhost:5432/adoteja?schema=public
+PORT=3001
+FRONTEND_URL=http://localhost:3000
+NODE_ENV=development
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+> O arquivo `.env` não é versionado. O `.env.example` contém apenas os nomes das variáveis.
+
+> Se a porta 5432 já estiver ocupada por um PostgreSQL instalado na própria máquina, defina `POSTGRES_PORT=5433` (por exemplo) e ajuste a porta na `DATABASE_URL`.
+
+## Inicialização do banco de dados
 
 ```bash
+docker compose up -d
+docker compose ps
+```
+
+Para encerrar:
+
+```bash
+docker compose down
+```
+
+> Não utilize `docker compose down -v` no fluxo normal, pois remove o volume persistente com os dados do banco.
+
+## Execução do frontend
+
+```bash
+cd frontend
+npm install
 npm run dev
 ```
 
-A aplicação estará disponível em:
+Disponível em `http://localhost:3000`.
 
-```text
-http://localhost:3000
+## Execução do backend
+
+```bash
+cd backend
+npm install
+npm run dev
 ```
 
-## Fluxo de desenvolvimento
+Disponível em `http://localhost:3001`.
 
-O projeto utiliza um fluxo baseado em branches:
+## Verificação da API
 
 ```text
-feature/* → develop → release/* → main
+GET http://localhost:3001/api/health
 ```
 
-As alterações são realizadas através de **Pull Requests** e passam por verificações automatizadas de CI antes da integração.
+Resposta esperada:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## Scripts úteis
+
+Na raiz do repositório:
+
+- `npm run dev` — inicia frontend e backend simultaneamente
+- `npm run build` — build de frontend e backend
+- `npm run typecheck` — verificação de tipos
+
+Em `backend/`:
+
+- `npm run db:validate` — valida a conexão do Prisma com o PostgreSQL
+
+## Fluxo de branches
+
+```text
+main
+  └── develop
+        └── feature/*
+```
+
+Alterações são integradas via **Pull Request** (`feature/*` → `develop` → `main`) e passam por verificações automatizadas de CI.
 
 ## CI/CD
 
-O projeto utiliza **GitHub Actions** para automação de:
+O **GitHub Actions** executa, para cada Pull Request e push em `develop`/`main`:
 
+- Checkout
+- Instalação das dependências
 - Typecheck
-- Testes
 - Build
 
-A publicação dos ambientes é realizada através da **Vercel**.
+A publicação do frontend é feita na **Vercel** (`develop` → ambiente de desenvolvimento, `main` → produção).
 
-## Projeto acadêmico
+## Objetivo acadêmico
 
-Projeto desenvolvido para a disciplina de **Gerência de Configuração e DevOps**, com foco na aplicação prática de:
-
-- Gerência de configuração;
-- Controle de versão;
-- Colaboração com Git e GitHub;
-- Gerenciamento de ambientes;
-- Auditoria de alterações;
-- Integração contínua (CI);
-- Entrega contínua (CD).
-
----
-
-**AdoteJá** — conectando pessoas a novos companheiros.
+Projeto desenvolvido para a disciplina de **Gerência de Configuração e DevOps**, com foco na aplicação prática de gerência de configuração, controle de versão, integração contínua e entrega contínua.
