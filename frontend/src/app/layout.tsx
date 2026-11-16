@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Nunito } from "next/font/google";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
-const geist = Geist({
+const nunito = Nunito({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-nunito",
 });
 
 export const metadata: Metadata = {
-  title: "AdoteJá — Encontre um novo companheiro",
+  title: "AdoteJá",
   description:
     "Plataforma web para divulgação e adoção responsável de animais.",
 };
@@ -20,7 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${geist.variable} antialiased`}>{children}</body>
+      <body className={`${nunito.variable} flex min-h-screen flex-col antialiased`}>
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </body>
     </html>
   );
 }

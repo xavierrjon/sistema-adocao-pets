@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Ilustração de um cachorro e uma gata lado a lado, cercados por corações">
+  <defs>
+    <linearGradient id="bg-hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#CFE8FF" />
+      <stop offset="1" stop-color="#EFF7FF" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg-hero)" />
+  <circle cx="110" cy="120" r="60" fill="#ffffff" opacity="0.45" />
+  <circle cx="700" cy="90" r="40" fill="#ffffff" opacity="0.45" />
+  <circle cx="740" cy="480" r="70" fill="#ffffff" opacity="0.4" />
+  <circle cx="70" cy="500" r="46" fill="#ffffff" opacity="0.4" />
+  <ellipse cx="400" cy="330" rx="300" ry="240" fill="#ffffff" opacity="0.45" />
+  <path transform="translate(250 108) scale(1.6)" fill="#F472B6" opacity="0.9"
+    d="M0 -6 C -1.6 -9.4 -6.4 -9.4 -7.6 -5.6 C -8.8 -2.4 -4.4 0.8 0 4.4 C 4.4 0.8 8.8 -2.4 7.6 -5.6 C 6.4 -9.4 1.6 -9.4 0 -6 Z" />
+  <path transform="translate(420 66) scale(2.2)" fill="#F472B6" opacity="0.8"
+    d="M0 -6 C -1.6 -9.4 -6.4 -9.4 -7.6 -5.6 C -8.8 -2.4 -4.4 0.8 0 4.4 C 4.4 0.8 8.8 -2.4 7.6 -5.6 C 6.4 -9.4 1.6 -9.4 0 -6 Z" />
+  <path transform="translate(575 128) scale(1.4)" fill="#F472B6" opacity="0.85"
+    d="M0 -6 C -1.6 -9.4 -6.4 -9.4 -7.6 -5.6 C -8.8 -2.4 -4.4 0.8 0 4.4 C 4.4 0.8 8.8 -2.4 7.6 -5.6 C 6.4 -9.4 1.6 -9.4 0 -6 Z" />
+  <path transform="translate(330 58) scale(1.1)" fill="#F9A8D4" opacity="0.9"
+    d="M0 -6 C -1.6 -9.4 -6.4 -9.4 -7.6 -5.6 C -8.8 -2.4 -4.4 0.8 0 4.4 C 4.4 0.8 8.8 -2.4 7.6 -5.6 C 6.4 -9.4 1.6 -9.4 0 -6 Z" />
+  <path transform="translate(660 200) scale(1.2)" fill="#F9A8D4" opacity="0.8"
+    d="M0 -6 C -1.6 -9.4 -6.4 -9.4 -7.6 -5.6 C -8.8 -2.4 -4.4 0.8 0 4.4 C 4.4 0.8 8.8 -2.4 7.6 -5.6 C 6.4 -9.4 1.6 -9.4 0 -6 Z" />
+  <ellipse cx="230" cy="446" rx="160" ry="30" fill="#1D73EC" opacity="0.12" />
+  <ellipse cx="560" cy="436" rx="170" ry="32" fill="#1D73EC" opacity="0.12" />
+  <g transform="translate(50 172) scale(0.9)">
+  <circle cx="200" cy="164" r="88" fill="#B07B4F" />
+  <ellipse cx="112" cy="150" rx="33" ry="56" fill="#8E5E38" transform="rotate(12 112 150)" />
+  <ellipse cx="288" cy="150" rx="33" ry="56" fill="#8E5E38" transform="rotate(-12 288 150)" />
+  <ellipse cx="170" cy="148" rx="12" ry="15" fill="#42342B" />
+  <circle cx="174" cy="143" r="4" fill="#ffffff" opacity="0.9" />
+  <ellipse cx="230" cy="148" rx="12" ry="15" fill="#42342B" />
+  <circle cx="234" cy="143" r="4" fill="#ffffff" opacity="0.9" />
+  <ellipse cx="200" cy="196" rx="52" ry="38" fill="#D8B28C" />
+  <ellipse cx="200" cy="218" rx="12" ry="10" fill="#F27D7D" />
+  <ellipse cx="200" cy="180" rx="16" ry="11" fill="#42342B" />
+  <ellipse cx="194" cy="176" rx="5" ry="3" fill="#ffffff" opacity="0.7" />
+  <path d="M200 191 L200 202" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M200 202 Q188 212 178 204" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M200 202 Q212 212 222 204" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M140 234 Q200 288 260 234" stroke="#EF6C4D" stroke-width="16" stroke-linecap="round" fill="none" />
+  <circle cx="200" cy="276" r="11" fill="#FFD166" stroke="#D9A930" stroke-width="3" /></g>
+  <g transform="translate(390 165) scale(0.85)">
+  <ellipse cx="136" cy="86" rx="36" ry="46" fill="#F2A65A" transform="rotate(-20 136 86)" />
+  <ellipse cx="136" cy="86" rx="18" ry="28" fill="#F5A8A0" opacity="0.85" transform="rotate(-20 136 86)" />
+  <ellipse cx="264" cy="86" rx="36" ry="46" fill="#F2A65A" transform="rotate(20 264 86)" />
+  <ellipse cx="264" cy="86" rx="18" ry="28" fill="#F5A8A0" opacity="0.85" transform="rotate(20 264 86)" />
+  <circle cx="200" cy="170" r="92" fill="#F2A65A" />
+  <ellipse cx="166" cy="160" rx="12" ry="16" fill="#42342B" />
+  <circle cx="170.5" cy="154" r="4" fill="#ffffff" opacity="0.9" />
+  <ellipse cx="234" cy="160" rx="12" ry="16" fill="#42342B" />
+  <circle cx="238.5" cy="154" r="4" fill="#ffffff" opacity="0.9" />
+  <circle cx="138" cy="192" r="11" fill="#F5A8A0" opacity="0.35" />
+  <circle cx="262" cy="192" r="11" fill="#F5A8A0" opacity="0.35" />
+  <path d="M200 182 L190 194 Q200 203 210 194 Z" fill="#E3766B" />
+  <path d="M200 203 Q191 213 181 207" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M200 203 Q209 213 219 207" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <g stroke="#42342B" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.3">
+    <path d="M118 186 Q88 182 60 176" />
+    <path d="M118 198 Q86 200 58 204" />
+    <path d="M282 186 Q312 182 340 176" />
+    <path d="M282 198 Q314 200 342 204" />
+  </g>
+  <path d="M136 240 Q200 296 264 240" stroke="#1D73EC" stroke-width="16" stroke-linecap="round" fill="none" />
+  <circle cx="200" cy="278" r="11" fill="#FFD166" stroke="#D9A930" stroke-width="3" /></g>
+</svg>
