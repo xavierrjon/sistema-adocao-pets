@@ -5,6 +5,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import express from "express";
 import cors from "cors";
+import healthRoute from "./routes/health";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/api", healthRoute);
 
 const port = Number(process.env.PORT ?? 3001);
 
