@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
+import { AppFooter } from "@/components/layout/AppFooter";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
@@ -27,7 +28,9 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <AppFooter>
+            <Footer />
+          </AppFooter>
         </AuthProvider>
       </body>
     </html>
