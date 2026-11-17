@@ -21,6 +21,10 @@ describe("Navbar", () => {
     render(<Navbar />);
 
     expect(screen.getByRole("link", { name: "AdoteJá — página inicial" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "AdoteJá" })).toHaveAttribute(
+      "src",
+      "/images/logo-adoteja.svg",
+    );
     expect(screen.getByRole("link", { name: "Início" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Animais" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Entrar" })).toBeInTheDocument();
