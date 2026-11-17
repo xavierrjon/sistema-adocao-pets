@@ -28,37 +28,28 @@ export async function getAnimalById(id: string) {
   return animal;
 }
 
-export async function createAnimal(data: CreateAnimalInput) {
-  const user = await prisma.user.findUnique({
-    where: { id: data.userId },
-    select: { id: true },
+export async function createAnimal(userId: string, data: CreateAnimalInput) {
+  return prisma.animal.create({
+    data: { ...data, userId },
   });
-
-  if (!user) {
-    throw new HttpError(404, "Usuário não encontrado.");
-  }
-
-  return prisma.animal.create({ data });
 }
 
-export async function updateAnimal(id: string, data: UpdateAnimalInput) {
-  await getAnimalById(id);
+export async function updateAnimal(id: string, userId: string, data: UpdateAnimalInput) {
+  const animal = await getAnimalById(id);
 
-  if (data.userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { id: true },
-    });
-
-    if (!user) {
-      throw new HttpError(404, "Usuário não encontrado.");
-    }
+  if (animal.userId !== userId) {
+    throw new HttpError(403, "Você não tem permissão para editar este animal.");
   }
 
   return prisma.animal.update({ where: { id }, data });
 }
 
-export async function deleteAnimal(id: string) {
-  await getAnimalById(id);
+export async function deleteAnimal(id: string, userId: string) {
+  const animal = await getAnimalById(id);
+
+  if (animal.userId !== userId) {
+    throw new HttpError(403, "Você não tem permissão para excluir este animal.");
+  }
+
   await prisma.animal.delete({ where: { id } });
 }
