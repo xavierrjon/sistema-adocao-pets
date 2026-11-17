@@ -434,7 +434,6 @@ describe("PUT /api/animals/:id (imagem)", () => {
 
   it("bloqueia a substituição de imagem de anúncio de terceiros", async () => {
     prismaMock.animal.findUnique.mockResolvedValue(otherUsersAnimal);
-    storageMocks.uploadAnimalImage.mockResolvedValue(UPLOADED_IMAGE);
 
     const response = await request(app)
       .put(`/api/animals/${otherUsersAnimal.id}`)
@@ -444,9 +443,10 @@ describe("PUT /api/animals/:id (imagem)", () => {
       .attach("image", PNG_FILE, { filename: "novo.png", contentType: "image/png" });
 
     expect(response.status).toBe(403);
+    // O upload nem chega a acontecer: a propriedade é verificada antes.
+    expect(storageMocks.uploadAnimalImage).not.toHaveBeenCalled();
     expect(prismaMock.animal.update).not.toHaveBeenCalled();
-    // O arquivo já enviado é descartado, evitando imagens órfãs.
-    expect(storageMocks.deleteAnimalImage).toHaveBeenCalledWith(UPLOADED_IMAGE.publicId);
+    expect(storageMocks.deleteAnimalImage).not.toHaveBeenCalled();
   });
 });
 

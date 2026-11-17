@@ -127,18 +127,27 @@ type ImageChange = {
  * armazenamento é removido somente depois que a atualização no banco é
  * concluída, evitando perder a imagem em caso de falha.
  */
+/**
+ * Verifica a propriedade do anúncio antes de ações com efeito externo
+ * (por exemplo, upload de imagem no armazenamento).
+ */
+export async function assertAnimalOwnership(id: string, userId: string, action: "editar" | "excluir") {
+  const animal = await getAnimalRecord(id);
+
+  if (animal.userId !== userId) {
+    throw new HttpError(403, `Você não tem permissão para ${action} este animal.`);
+  }
+
+  return animal;
+}
+
 export async function updateAnimal(
   id: string,
   userId: string,
   data: UpdateAnimalInput,
   imageChange: ImageChange = {},
 ) {
-  const animal = await getAnimalRecord(id);
-
-  if (animal.userId !== userId) {
-    throw new HttpError(403, "Você não tem permissão para editar este animal.");
-  }
-
+  const animal = await assertAnimalOwnership(id, userId, "editar");
   const imageFields: { imageUrl?: string | null; imagePublicId?: string | null } = {};
 
   if (imageChange.newImage) {
@@ -165,11 +174,7 @@ export async function updateAnimal(
  * exclusão do registro).
  */
 export async function deleteAnimal(id: string, userId: string) {
-  const animal = await getAnimalRecord(id);
-
-  if (animal.userId !== userId) {
-    throw new HttpError(403, "Você não tem permissão para excluir este animal.");
-  }
+  const animal = await assertAnimalOwnership(id, userId, "excluir");
 
   await prisma.animal.delete({ where: { id } });
 

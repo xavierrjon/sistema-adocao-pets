@@ -53,13 +53,18 @@ export async function createAnimal(request: Request, response: Response) {
 export async function updateAnimal(request: Request, response: Response) {
   const { id } = animalParamsSchema.parse(request.params);
   const data = updateAnimalSchema.parse(request.body);
+  const userId = getAuthenticatedUser(request).id;
+
+  // A propriedade é verificada antes do upload: terceiros não devem
+  // conseguir disparar envios para o armazenamento.
+  await animalService.assertAnimalOwnership(id, userId, "editar");
 
   const uploadedImage = request.file
     ? await storageService.uploadAnimalImage({ buffer: request.file.buffer, size: request.file.size })
     : undefined;
 
   try {
-    const animal = await animalService.updateAnimal(id, getAuthenticatedUser(request).id, data, {
+    const animal = await animalService.updateAnimal(id, userId, data, {
       newImage: uploadedImage,
       // Campo texto do multipart: "true" indica que o usuário removeu a imagem.
       removeImage: !uploadedImage && request.body.removeImage === "true",
