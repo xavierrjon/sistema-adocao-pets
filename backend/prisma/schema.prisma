@@ -42,16 +42,21 @@ model Session {
 }
 
 model Animal {
-  id          String       @id @default(uuid())
-  name        String
-  species     String
-  breed       String
-  sex         String
-  size        String
-  description String
-  status      AnimalStatus @default(DISPONIVEL)
-  whatsapp    String
-  userId      String
+  id            String       @id @default(uuid())
+  name          String
+  species       String
+  breed         String
+  sex           String
+  size          String
+  description   String
+  status        AnimalStatus @default(DISPONIVEL)
+  whatsapp      String
+  /// URL pública da foto no serviço de armazenamento (Cloudinary).
+  imageUrl      String?
+  /// Identificador do arquivo no serviço de armazenamento, usado para
+  /// substituir a imagem na edição e removê-la na exclusão do anúncio.
+  imagePublicId String?
+  userId        String
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

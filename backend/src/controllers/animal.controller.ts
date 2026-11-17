@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUser } from "../middlewares/auth.middleware";
 import * as animalService from "../services/animal.service";
+import * as storageService from "../services/storage.service";
 import {
   animalParamsSchema,
   createAnimalSchema,
@@ -31,15 +32,45 @@ export async function getContact(request: Request, response: Response) {
 
 export async function createAnimal(request: Request, response: Response) {
   const data = createAnimalSchema.parse(request.body);
-  const animal = await animalService.createAnimal(getAuthenticatedUser(request).id, data);
-  response.status(201).json(animal);
+
+  // O upload ocorre antes da criação do registro; se o banco falhar depois,
+  // o arquivo recém-enviado é descartado para não deixar órfãos.
+  const uploadedImage = request.file
+    ? await storageService.uploadAnimalImage({ buffer: request.file.buffer, size: request.file.size })
+    : undefined;
+
+  try {
+    const animal = await animalService.createAnimal(getAuthenticatedUser(request).id, data, uploadedImage);
+    response.status(201).json(animal);
+  } catch (error) {
+    if (uploadedImage) {
+      await storageService.deleteAnimalImage(uploadedImage.publicId);
+    }
+    throw error;
+  }
 }
 
 export async function updateAnimal(request: Request, response: Response) {
   const { id } = animalParamsSchema.parse(request.params);
   const data = updateAnimalSchema.parse(request.body);
-  const animal = await animalService.updateAnimal(id, getAuthenticatedUser(request).id, data);
-  response.status(200).json(animal);
+
+  const uploadedImage = request.file
+    ? await storageService.uploadAnimalImage({ buffer: request.file.buffer, size: request.file.size })
+    : undefined;
+
+  try {
+    const animal = await animalService.updateAnimal(id, getAuthenticatedUser(request).id, data, {
+      newImage: uploadedImage,
+      // Campo texto do multipart: "true" indica que o usuário removeu a imagem.
+      removeImage: !uploadedImage && request.body.removeImage === "true",
+    });
+    response.status(200).json(animal);
+  } catch (error) {
+    if (uploadedImage) {
+      await storageService.deleteAnimalImage(uploadedImage.publicId);
+    }
+    throw error;
+  }
 }
 
 export async function deleteAnimal(request: Request, response: Response) {

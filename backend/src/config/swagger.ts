@@ -72,6 +72,7 @@ const animalExample = {
   size: "Medio",
   description: "Gatinha dócil e carinhosa que procura um novo lar.",
   status: "DISPONIVEL",
+  imageUrl: null,
   userId: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
   createdAt: "2026-11-17T12:00:00.000Z",
   updatedAt: "2026-11-17T12:00:00.000Z",
@@ -323,13 +324,19 @@ export const swaggerSpec = {
         description:
           "Cria um animal para o usuário autenticado: o responsável é sempre o dono da sessão " +
           "(qualquer `userId` enviado pelo cliente é ignorado). O campo `status` é opcional e, " +
-          "por padrão, o backend utiliza `DISPONIVEL`.",
+          "por padrão, o backend utiliza `DISPONIVEL`.\n\n" +
+          "Aceita `application/json` ou `multipart/form-data`. No multipart, os campos são " +
+          "enviados como texto e a foto vai no campo `image` (opcional; JPEG, PNG ou WebP, até 5 MB).",
         operationId: "createAnimal",
         security: [{ sessionCookie: [] }],
         requestBody: {
           required: true,
           content: {
             "application/json": {
+              schema: { $ref: "#/components/schemas/CreateAnimalInput" },
+              example: createAnimalExample,
+            },
+            "multipart/form-data": {
               schema: { $ref: "#/components/schemas/CreateAnimalInput" },
               example: createAnimalExample,
             },
@@ -349,8 +356,20 @@ export const swaggerSpec = {
             error: "Dados inválidos.",
             details: [{ field: "name", message: "Nome é obrigatório." }],
           }),
+          413: errorResponse("Imagem muito grande.", {
+            error: "A imagem deve ter no máximo 5 MB.",
+          }),
+          502: errorResponse("Falha no armazenamento de imagens.", {
+            error: "Não foi possível salvar a imagem no serviço de armazenamento.",
+          }),
+          503: errorResponse("Armazenamento não configurado.", {
+            error: "Serviço de imagens não configurado. Informe as credenciais do Cloudinary no ambiente.",
+          }),
           401: unauthorizedNoCookieResponse,
           403: forbiddenOriginResponse,
+          429: errorResponse("Muitos anúncios criados.", {
+            error: "Muitos anúncios criados em pouco tempo. Tente novamente mais tarde.",
+          }),
           500: internalErrorResponse,
         },
       },
@@ -410,7 +429,10 @@ export const swaggerSpec = {
         summary: "Atualiza um animal",
         description:
           "Atualiza parcialmente um animal. É obrigatório informar ao menos um campo. " +
-          "Somente o responsável pelo animal pode atualizá-lo.",
+          "Somente o responsável pelo animal pode atualizá-lo.\n\n" +
+          "Aceita `application/json` ou `multipart/form-data`. No multipart, uma nova foto vai " +
+          "no campo `image` (JPEG, PNG ou WebP, até 5 MB) e substitui a atual; para remover a " +
+          "foto sem substituir, envie `removeImage=true`.",
         operationId: "updateAnimal",
         security: [{ sessionCookie: [] }],
         parameters: [idParam],
@@ -418,6 +440,10 @@ export const swaggerSpec = {
           required: true,
           content: {
             "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateAnimalInput" },
+              example: { status: "ADOTADO" },
+            },
+            "multipart/form-data": {
               schema: { $ref: "#/components/schemas/UpdateAnimalInput" },
               example: { status: "ADOTADO" },
             },
@@ -436,6 +462,15 @@ export const swaggerSpec = {
           400: errorResponse("Dados inválidos ou nenhum campo informado.", {
             error: "Dados inválidos.",
             details: [{ field: "", message: "Informe ao menos um campo para atualização." }],
+          }),
+          413: errorResponse("Imagem muito grande.", {
+            error: "A imagem deve ter no máximo 5 MB.",
+          }),
+          502: errorResponse("Falha no armazenamento de imagens.", {
+            error: "Não foi possível salvar a imagem no serviço de armazenamento.",
+          }),
+          503: errorResponse("Armazenamento não configurado.", {
+            error: "Serviço de imagens não configurado. Informe as credenciais do Cloudinary no ambiente.",
           }),
           401: unauthorizedResponse,
           403: forbiddenResponse,
@@ -641,6 +676,13 @@ export const swaggerSpec = {
           size: { $ref: "#/components/schemas/AnimalSize" },
           description: { type: "string" },
           status: { $ref: "#/components/schemas/AnimalStatus" },
+          imageUrl: {
+            type: "string",
+            format: "uri",
+            nullable: true,
+            description: "URL pública da foto do animal. `null` quando o anúncio não tem imagem.",
+            example: "https://res.cloudinary.com/exemplo/image/upload/v1730000000/adoteja/animals/uuid.jpg",
+          },
           userId: { type: "string", format: "uuid" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
