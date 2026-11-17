@@ -1,5 +1,6 @@
 import type {
   Animal,
+  AnimalContact,
   CreateAnimalInput,
   UpdateAnimalInput,
 } from "@/types/animal";
@@ -19,6 +20,16 @@ export function getAnimals(): Promise<Animal[]> {
 
 export function getAnimalById(id: string): Promise<Animal> {
   return request<Animal>(`/animals/${encodeURIComponent(id)}`);
+}
+
+/** Contato do responsável: exige sessão ativa (cookie). */
+export function getAnimalContact(id: string): Promise<AnimalContact> {
+  return request<AnimalContact>(`/animals/${encodeURIComponent(id)}/contact`);
+}
+
+/** Lista os animais do usuário autenticado (rota protegida por sessão). */
+export function listMyAnimals(): Promise<Animal[]> {
+  return request<Animal[]>("/animals/me");
 }
 
 export function createAnimal(data: CreateAnimalInput): Promise<Animal> {

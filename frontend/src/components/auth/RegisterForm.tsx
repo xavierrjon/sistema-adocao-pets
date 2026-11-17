@@ -7,7 +7,7 @@ import { AuthField } from "./AuthField";
 import { Button } from "@/components/ui/Button";
 import { EyeIcon, EyeOffIcon, LockIcon, MailIcon, UserIcon } from "@/components/ui/icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { ApiError } from "@/lib/api";
+import { ApiError } from "@/services/api";
 import { detailsToFieldErrors, isApiErrorWithStatus } from "@/lib/form-errors";
 import { withNext } from "@/lib/redirect";
 

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "@/lib/api";
+import { ApiError } from "@/services/api";
 
 const mocks = vi.hoisted(() => ({
   register: vi.fn(),
@@ -93,7 +93,7 @@ describe("RegisterForm", () => {
   });
 
   it("mostra erro específico para e-mail já cadastrado", async () => {
-    mocks.register.mockRejectedValue(new ApiError(409, "E-mail já cadastrado."));
+    mocks.register.mockRejectedValue(new ApiError("E-mail já cadastrado."));
     const event = userEvent.setup();
     render(<RegisterForm />);
 

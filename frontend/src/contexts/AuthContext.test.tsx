@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "@/lib/api";
+import { ApiError } from "@/services/api";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
@@ -79,7 +79,7 @@ describe("AuthProvider", () => {
   });
 
   it("considera usuário não autenticado quando não há sessão", async () => {
-    mocks.getCurrentUser.mockRejectedValue(new ApiError(401, "Sessão inválida."));
+    mocks.getCurrentUser.mockRejectedValue(new ApiError("Sessão inválida."));
 
     render(
       <AuthProvider>
@@ -110,7 +110,7 @@ describe("AuthProvider", () => {
   });
 
   it("atualiza o estado após login e limpa após logout", async () => {
-    mocks.getCurrentUser.mockRejectedValue(new ApiError(401, "Sem sessão."));
+    mocks.getCurrentUser.mockRejectedValue(new ApiError("Sem sessão."));
     mocks.login.mockResolvedValue(user);
     mocks.logout.mockResolvedValue({ message: "Sessão encerrada." });
 
@@ -131,7 +131,7 @@ describe("AuthProvider", () => {
 
   it("mantém o estado autenticado se o logout falhar", async () => {
     mocks.getCurrentUser.mockResolvedValue(user);
-    mocks.logout.mockRejectedValue(new ApiError(0, "Não foi possível conectar ao servidor."));
+    mocks.logout.mockRejectedValue(new ApiError("Não foi possível conectar ao servidor."));
 
     const event = userEvent.setup();
     render(

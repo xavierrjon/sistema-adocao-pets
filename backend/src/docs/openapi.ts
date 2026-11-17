@@ -15,14 +15,12 @@ const animalExample = {
   size: "Medio",
   description: "Cachorro dócil e brincalhão.",
   status: "DISPONIVEL",
-  whatsapp: "92999999999",
   userId: "3f1b8a52-6c1f-4c65-9d0b-2f4a1e7c9f11",
   createdAt: "2026-11-17T12:00:00.000Z",
   updatedAt: "2026-11-17T12:00:00.000Z",
   user: {
     id: "3f1b8a52-6c1f-4c65-9d0b-2f4a1e7c9f11",
     name: "João Silva",
-    whatsapp: "92999999999",
   },
 };
 
@@ -315,6 +313,30 @@ const openapiDocument = {
         },
       },
     },
+    "/animals/me": {
+      get: {
+        tags: ["Animals"],
+        summary: "Lista os anúncios do usuário autenticado",
+        description: "Retorna apenas os animais cadastrados pela sessão atual, sem contato privado.",
+        security: [{ sessionCookie: [] }],
+        parameters: [cookieParameter],
+        responses: {
+          "200": {
+            description: "Animais do usuário autenticado.",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/AnimalResponse" },
+                },
+              },
+            },
+          },
+          "401": unauthorizedResponse,
+          "500": { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
     "/animals/{id}": {
       parameters: [
         {
@@ -390,6 +412,45 @@ const openapiDocument = {
         },
       },
     },
+    "/animals/{id}/contact": {
+      parameters: [
+        {
+          in: "path",
+          name: "id",
+          required: true,
+          description: "UUID do animal.",
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      get: {
+        tags: ["Animals"],
+        summary: "Consulta o contato do responsável (autenticado)",
+        description:
+          "O WhatsApp só é devolvido para usuários com sessão válida. As rotas públicas de animais nunca incluem esse dado.",
+        security: [{ sessionCookie: [] }],
+        parameters: [cookieParameter],
+        responses: {
+          "200": {
+            description: "Contato do responsável pelo animal.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AnimalContactResponse" },
+                example: {
+                  animalId: "9b2c7d44-1a3e-4f5b-8c6d-7e8f9a0b1c2d",
+                  animalName: "Rex",
+                  responsibleName: "João Silva",
+                  whatsapp: "92999999999",
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "401": unauthorizedResponse,
+          "404": { $ref: "#/components/responses/NotFound" },
+          "500": { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
     "/users/{id}": {
       get: {
         tags: ["Users"],
@@ -414,7 +475,6 @@ const openapiDocument = {
                     id: { type: "string", format: "uuid" },
                     name: { type: "string" },
                     email: { type: "string", format: "email" },
-                    whatsapp: { type: ["string", "null"] },
                     createdAt: { type: "string", format: "date-time" },
                     updatedAt: { type: "string", format: "date-time" },
                   },
@@ -544,7 +604,6 @@ const openapiDocument = {
           size: { type: "string" },
           description: { type: "string" },
           status: { type: "string", enum: ["DISPONIVEL", "EM_PROCESSO", "ADOTADO"] },
-          whatsapp: { type: "string" },
           userId: { type: "string", format: "uuid" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
@@ -553,9 +612,18 @@ const openapiDocument = {
             properties: {
               id: { type: "string", format: "uuid" },
               name: { type: "string" },
-              whatsapp: { type: "string" },
             },
           },
+        },
+      },
+      AnimalContactResponse: {
+        type: "object",
+        description: "Contato privado do responsável, disponível apenas com sessão válida.",
+        properties: {
+          animalId: { type: "string", format: "uuid" },
+          animalName: { type: "string" },
+          responsibleName: { type: "string" },
+          whatsapp: { type: "string", example: "92999999999" },
         },
       },
       AuthError: {

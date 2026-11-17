@@ -42,9 +42,15 @@ const animal = {
   userId: USER_ID,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  user: { id: USER_ID, name: "João Silva" },
 };
 
-const otherUsersAnimal = { ...animal, id: "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d", userId: OTHER_USER_ID };
+const otherUsersAnimal = {
+  ...animal,
+  id: "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  userId: OTHER_USER_ID,
+  user: { id: OTHER_USER_ID, name: "Maria Souza" },
+};
 
 const validBody = {
   name: "Rex",
@@ -83,6 +89,8 @@ describe("GET /api/animals", () => {
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0].name).toBe("Rex");
+    expect(response.body[0].whatsapp).toBeUndefined();
+    expect(response.body[0].user.whatsapp).toBeUndefined();
   });
 
   it("retorna lista vazia quando não há animais", async () => {
@@ -95,6 +103,28 @@ describe("GET /api/animals", () => {
   });
 });
 
+describe("GET /api/animals/me", () => {
+  it("exige autenticação", async () => {
+    const response = await request(app).get("/api/animals/me");
+
+    expect(response.status).toBe(401);
+    expect(prismaMock.animal.findMany).not.toHaveBeenCalled();
+  });
+
+  it("retorna apenas os animais do usuário autenticado", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    const response = await request(app).get("/api/animals/me").set("Cookie", COOKIE);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: USER_ID } }),
+    );
+    expect(response.body[0].whatsapp).toBeUndefined();
+  });
+});
+
 describe("GET /api/animals/:id", () => {
   it("retorna o animal encontrado sem autenticação", async () => {
     prismaMock.animal.findUnique.mockResolvedValue(animal);
@@ -103,6 +133,8 @@ describe("GET /api/animals/:id", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(ANIMAL_ID);
+    expect(response.body.whatsapp).toBeUndefined();
+    expect(response.body.user.whatsapp).toBeUndefined();
   });
 
   it("retorna 404 quando o animal não existe", async () => {
@@ -118,6 +150,47 @@ describe("GET /api/animals/:id", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("Dados inválidos.");
+  });
+});
+
+describe("GET /api/animals/:id/contact", () => {
+  it("exige autenticação", async () => {
+    const response = await request(app).get(`/api/animals/${ANIMAL_ID}/contact`);
+
+    expect(response.status).toBe(401);
+    expect(prismaMock.animal.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("devolve o WhatsApp para usuário autenticado", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animal);
+
+    const response = await request(app)
+      .get(`/api/animals/${ANIMAL_ID}/contact`)
+      .set("Cookie", COOKIE);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      animalId: ANIMAL_ID,
+      animalName: "Rex",
+      responsibleName: "João Silva",
+      whatsapp: "92999999999",
+    });
+  });
+
+  it("retorna 404 quando o animal não existe", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(null);
+
+    const response = await request(app)
+      .get(`/api/animals/${ANIMAL_ID}/contact`)
+      .set("Cookie", COOKIE);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("retorna 400 para ID inválido", async () => {
+    const response = await request(app).get("/api/animals/id-invalido/contact").set("Cookie", COOKIE);
+
+    expect(response.status).toBe(400);
   });
 });
 
@@ -296,6 +369,7 @@ describe("GET /api/users/:id", () => {
     expect(response.body.email).toBe("maria@email.com");
     expect(response.body.password).toBeUndefined();
     expect(response.body.passwordHash).toBeUndefined();
+    expect(response.body.whatsapp).toBeUndefined();
   });
 
   it("retorna 404 quando o usuário não existe", async () => {

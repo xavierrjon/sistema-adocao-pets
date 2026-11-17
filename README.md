@@ -135,8 +135,10 @@ POST   /api/auth/login
 GET    /api/auth/me
 POST   /api/auth/logout
 GET    /api/animals                 (público)
-GET    /api/animals/:id             (público)
-POST   /api/animals                 (autenticado)
+GET    /api/animals/me               (autenticado)
+GET    /api/animals/:id              (público)
+GET    /api/animals/:id/contact      (autenticado)
+POST   /api/animals                  (autenticado)
 PUT    /api/animals/:id             (autenticado, apenas o responsável)
 DELETE /api/animals/:id             (autenticado, apenas o responsável)
 GET    /api/users/:id
@@ -157,6 +159,14 @@ O frontend consome esses endpoints com `credentials: "include"` e não grava
 tokens em `localStorage`/`sessionStorage`. A proteção visual das rotas é
 complementar à autorização feita no backend.
 
+Animais podem ser descobertos por visitantes, mas ações são privadas:
+`POST`/`PUT`/`DELETE /api/animals` exigem sessão e o backend sempre usa o
+usuário autenticado como responsável. Edição e exclusão também verificam
+propriedade (`403` para animal de outro usuário, `401` sem sessão). O WhatsApp
+do responsável não aparece nas listagens nem nos detalhes públicos: visitantes
+são direcionados ao login ao clicar em "Quero adotar" e somente
+`GET /api/animals/:id/contact` devolve o contato, mediante sessão válida.
+
 ### Documentação da API (Swagger)
 
 Com o backend em execução:
@@ -173,6 +183,13 @@ cd backend
 npx prisma validate
 npx prisma migrate dev
 npx prisma studio
+```
+
+Para popular o banco com os animais de exemplo usados pela interface e permitir
+testar o fluxo de adoção ponta a ponta:
+
+```bash
+npm run db:seed
 ```
 
 A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas. A segunda migration renomeia a coluna de senha para `passwordHash` (convertendo senhas legadas em hashes bcrypt) e cria a tabela `sessions`.

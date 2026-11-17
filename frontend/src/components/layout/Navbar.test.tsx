@@ -56,6 +56,8 @@ describe("Navbar", () => {
     expect(screen.getByRole("link", { name: "Animais" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: "Criar conta" })).toHaveAttribute("href", "/cadastro");
+    expect(screen.queryByRole("link", { name: "Meus animais" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Meu perfil" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Sair" })).not.toBeInTheDocument();
   });
 
@@ -76,6 +78,9 @@ describe("Navbar", () => {
     render(<Navbar />);
 
     expect(screen.getByText("Olá, João")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Meus animais" })).toHaveAttribute("href", "/meus-animais");
+    expect(screen.getByRole("link", { name: "Meu perfil" })).toHaveAttribute("href", "/perfil");
+    expect(screen.queryByRole("link", { name: "Entrar" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Sair" }));
 
     expect(authMocks.logout).toHaveBeenCalledOnce();

@@ -12,10 +12,21 @@ export async function listAnimals(_request: Request, response: Response) {
   response.status(200).json(animals);
 }
 
+export async function listMyAnimals(request: Request, response: Response) {
+  const animals = await animalService.listUserAnimals(getAuthenticatedUser(request).id);
+  response.status(200).json(animals);
+}
+
 export async function getAnimal(request: Request, response: Response) {
   const { id } = animalParamsSchema.parse(request.params);
   const animal = await animalService.getAnimalById(id);
   response.status(200).json(animal);
+}
+
+export async function getContact(request: Request, response: Response) {
+  const { id } = animalParamsSchema.parse(request.params);
+  const contact = await animalService.getAnimalContact(id);
+  response.status(200).json(contact);
 }
 
 export async function createAnimal(request: Request, response: Response) {

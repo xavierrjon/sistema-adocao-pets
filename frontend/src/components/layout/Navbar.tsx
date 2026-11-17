@@ -55,10 +55,28 @@ export function Navbar() {
 
     if (isAuthenticated) {
       const firstName = user?.name.trim().split(" ")[0] ?? "Usuário";
+      const accountLinks = [
+        { href: "/meus-animais", label: "Meus animais" },
+        { href: "/perfil", label: "Meu perfil" },
+      ];
 
       return (
         <div className={mobile ? "flex flex-col gap-2" : "flex items-center gap-3"}>
           <span className="text-sm font-semibold text-brand-800">Olá, {firstName}</span>
+          {accountLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setIsMenuOpen(false)}
+              className={
+                mobile
+                  ? "w-full text-left text-sm font-bold text-brand-700 hover:underline"
+                  : "hidden text-sm font-bold text-brand-700 hover:underline lg:inline"
+              }
+            >
+              {label}
+            </Link>
+          ))}
           <Button
             variant="outline"
             size="sm"

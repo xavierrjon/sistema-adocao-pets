@@ -6,6 +6,8 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 const router = Router();
 
 router.get("/", asyncHandler(animalController.listAnimals));
+router.get("/me", authMiddleware, asyncHandler(animalController.listMyAnimals));
+router.get("/:id/contact", authMiddleware, asyncHandler(animalController.getContact));
 router.get("/:id", asyncHandler(animalController.getAnimal));
 router.post("/", authMiddleware, asyncHandler(animalController.createAnimal));
 router.put("/:id", authMiddleware, asyncHandler(animalController.updateAnimal));

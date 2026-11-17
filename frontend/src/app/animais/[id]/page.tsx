@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { AdoptionContact } from "@/components/animals/AdoptionContact";
 import { AnimalInfoTile } from "@/components/animals/AnimalInfoTile";
 import { AnimalStatusBadge } from "@/components/animals/AnimalStatusBadge";
 import {
@@ -10,7 +11,6 @@ import {
   AnimalDetailsLoading,
   AnimalDetailsNotFound,
 } from "@/components/animals/AnimalDetailsStates";
-import { Button } from "@/components/ui/Button";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { speciesArticle } from "@/lib/species";
 import { ApiError } from "@/services/api";
@@ -99,10 +99,7 @@ export default function AnimalDetailsPage() {
             <AnimalInfoTile label="Raça" value={animal.breed} />
           </li>
           <li>
-            <AnimalInfoTile label="Responsável" value={animal.user.name} />
-          </li>
-          <li>
-            <AnimalInfoTile label="WhatsApp" value={animal.user.whatsapp} />
+            <AnimalInfoTile label="Responsável" value={animal.user?.name ?? "Não informado"} />
           </li>
         </ul>
 
@@ -111,14 +108,8 @@ export default function AnimalDetailsPage() {
           <p className="leading-relaxed text-slate-600">{animal.description}</p>
         </section>
 
-        <footer className="space-y-3 border-t border-slate-200 pt-8">
-          <Button size="lg" className="w-full sm:w-auto">
-            Quero adotar 🐾
-          </Button>
-          <p className="text-sm text-slate-500">
-            O contato com o responsável pode ser feito pelo WhatsApp informado acima. O fluxo de adoção
-            será disponibilizado em breve.
-          </p>
+        <footer className="border-t border-slate-200 pt-8">
+          <AdoptionContact animalId={animal.id} animalName={animal.name} />
         </footer>
       </article>
     </div>

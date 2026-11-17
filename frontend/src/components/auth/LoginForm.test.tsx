@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "@/lib/api";
+import { ApiError } from "@/services/api";
 
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
@@ -98,7 +98,7 @@ describe("LoginForm", () => {
   });
 
   it("exibe mensagem genérica para credenciais inválidas", async () => {
-    mocks.login.mockRejectedValue(new ApiError(401, "E-mail ou senha inválidos."));
+    mocks.login.mockRejectedValue(new ApiError("E-mail ou senha inválidos."));
     const event = userEvent.setup();
     render(<LoginForm />);
 
