@@ -41,6 +41,10 @@ app.use(csrfProtection);
 app.get("/api/docs/openapi.json", (_request, response) => {
   response.status(200).json(swaggerSpec);
 });
+// Alias mantido por compatibilidade com a URL histórica do documento OpenAPI.
+app.get("/api/openapi.json", (_request, response) => {
+  response.status(200).json(swaggerSpec);
+});
 app.use(
   "/api/docs",
   swaggerUi.serve,

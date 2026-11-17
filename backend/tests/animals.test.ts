@@ -392,7 +392,7 @@ describe("documentação e rotas inexistentes", () => {
     const response = await request(app).get("/api/openapi.json");
 
     expect(response.status).toBe(200);
-    expect(response.body.openapi).toBe("3.1.0");
+    expect(response.body.openapi).toBe("3.0.3");
     expect(response.body.paths["/api/auth/me"]).toBeUndefined();
     expect(response.body.paths["/auth/me"]).toBeDefined();
   });

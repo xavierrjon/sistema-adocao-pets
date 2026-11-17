@@ -1,5 +1,7 @@
 /** Documentação OpenAPI da API AdoteJá. */
 
+import { SESSION_COOKIE_NAME } from "../lib/auth";
+
 const idParam = {
   name: "id",
   in: "path" as const,
@@ -31,9 +33,35 @@ const internalErrorResponse = errorResponse("Erro interno do servidor.", {
   error: "Erro interno do servidor.",
 });
 
-const conflictResponse = errorResponse("Conflito de integridade dos dados.", {
-  error: "Registro já existente.",
+const unauthorizedResponse = errorResponse(
+  "Sessão ausente, inválida ou expirada.",
+  { error: "Sessão inválida ou expirada." },
+);
+
+const unauthorizedNoCookieResponse = errorResponse(
+  "Requisição sem cookie de sessão.",
+  { error: "Autenticação necessária." },
+);
+
+const forbiddenResponse = errorResponse(
+  "O usuário não tem permissão sobre o recurso.",
+  { error: "Você não tem permissão para editar este animal." },
+);
+
+const forbiddenOriginResponse = errorResponse(
+  "Origem da requisição não autorizada (proteção CSRF).",
+  { error: "Origem não autorizada." },
+);
+
+const conflictEmailResponse = errorResponse("E-mail já cadastrado.", {
+  error: "E-mail já cadastrado.",
 });
+
+const userExample = {
+  id: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
+  name: "Maria Silva",
+  email: "maria@example.com",
+};
 
 const animalExample = {
   id: "5f1c2e78-9b0a-4c31-8a1f-2d6e7b8c9a01",
@@ -44,14 +72,12 @@ const animalExample = {
   size: "Medio",
   description: "Gatinha dócil e carinhosa que procura um novo lar.",
   status: "DISPONIVEL",
-  whatsapp: "31999999999",
   userId: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
   createdAt: "2026-11-17T12:00:00.000Z",
   updatedAt: "2026-11-17T12:00:00.000Z",
   user: {
     id: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
     name: "Maria Silva",
-    whatsapp: "31999999999",
   },
 };
 
@@ -63,7 +89,6 @@ const createAnimalExample = {
   size: "Medio",
   description: "Gatinha dócil e carinhosa que procura um novo lar.",
   whatsapp: "31999999999",
-  userId: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
 };
 
 export const swaggerSpec = {
@@ -73,13 +98,23 @@ export const swaggerSpec = {
     version: "1.0.0",
     description:
       "API REST do AdoteJá para consulta e gerenciamento de animais e usuários. " +
-      "Todos os endpoints estão sob o prefixo `/api`.",
+      "Todos os endpoints estão sob o prefixo `/api`.\n\n" +
+      "**Autenticação:** feita por sessões persistidas no PostgreSQL e transportadas " +
+      `em um cookie \`${SESSION_COOKIE_NAME}\` \`HttpOnly\`. O token original trafega apenas no cookie; ` +
+      "o banco armazena somente seu hash SHA-256. Endpoints protegidos exigem o cookie de sessão " +
+      "e retornam `401` quando a sessão está ausente, inválida ou expirada.",
   },
   servers: [
     { url: "http://localhost:3001/api", description: "Desenvolvimento local" },
   ],
   tags: [
     { name: "Saúde", description: "Verificação de disponibilidade da API." },
+    {
+      name: "Autenticação",
+      description:
+        "Cadastro, login, sessão e logout. A sessão é estabelecida pelo login " +
+        "(que envia o cookie de sessão) e encerrada pelo logout (que revoga a sessão e limpa o cookie).",
+    },
     { name: "Animais", description: "Consulta e gerenciamento de animais." },
     { name: "Usuários", description: "Consulta de usuários responsáveis." },
   ],
@@ -90,6 +125,7 @@ export const swaggerSpec = {
         summary: "Verifica o estado da API",
         description: "Retorna `ok` quando o servidor está ativo. Não consulta o banco de dados.",
         operationId: "getHealth",
+        security: [],
         responses: {
           200: {
             description: "API disponível.",
@@ -104,14 +140,167 @@ export const swaggerSpec = {
         },
       },
     },
+    "/auth/register": {
+      post: {
+        tags: ["Autenticação"],
+        summary: "Cadastra um novo usuário",
+        description:
+          "Valida os dados, armazena a senha como hash bcrypt e retorna apenas os dados públicos " +
+          "do usuário. Não cria sessão: após o cadastro, o cliente deve encaminhar o usuário para o login.\n\n" +
+          "Limitado a 5 cadastros por hora por IP.",
+        operationId: "registerUser",
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/RegisterRequest" },
+              example: {
+                name: "Maria Silva",
+                email: "maria@example.com",
+                password: "SenhaSegura123",
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Usuário cadastrado.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AuthUser" },
+                example: userExample,
+              },
+            },
+          },
+          400: errorResponse("Dados inválidos.", {
+            error: "Dados inválidos.",
+            details: [{ field: "email", message: "Informe um e-mail válido." }],
+          }),
+          409: conflictEmailResponse,
+          429: errorResponse("Muitos cadastros em pouco tempo.", {
+            error: "Muitos cadastros. Tente novamente mais tarde.",
+          }),
+          500: internalErrorResponse,
+        },
+      },
+    },
+    "/auth/login": {
+      post: {
+        tags: ["Autenticação"],
+        summary: "Autentica um usuário e cria uma sessão",
+        description:
+          "Compara a senha com o hash armazenado, cria a sessão no PostgreSQL e devolve o token " +
+          `original no cookie \`${SESSION_COOKIE_NAME}\` (\`HttpOnly\`, \`Path=/\`, \`SameSite\` configurável, ` +
+          "`Secure` em produção). Mensagens de erro genéricas não revelam se o e-mail existe.\n\n" +
+          "Sem `rememberMe`, a sessão expira em 12 horas e o cookie não tem `Max-Age` " +
+          "(é removido ao fechar o navegador). Com `rememberMe: true`, sessão e cookie duram 30 dias.\n\n" +
+          "Limitado a 10 tentativas por 15 minutos por IP.",
+        operationId: "loginUser",
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/LoginRequest" },
+              example: {
+                email: "maria@example.com",
+                password: "SenhaSegura123",
+                rememberMe: true,
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description:
+              "Login realizado. O cookie de sessão é enviado no cabeçalho `Set-Cookie` " +
+              "e deve ser reenviado pelo cliente nas chamadas subsequentes.",
+            headers: {
+              "Set-Cookie": {
+                description: `${SESSION_COOKIE_NAME}=<token>; HttpOnly; Path=/; SameSite=Lax`,
+                schema: { type: "string" },
+              },
+            },
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AuthUser" },
+                example: userExample,
+              },
+            },
+          },
+          400: errorResponse("Dados inválidos.", {
+            error: "Dados inválidos.",
+            details: [{ field: "password", message: "Informe sua senha." }],
+          }),
+          401: errorResponse("Credenciais inválidas.", {
+            error: "E-mail ou senha inválidos.",
+          }),
+          403: forbiddenOriginResponse,
+          429: errorResponse("Muitas tentativas de login.", {
+            error: "Muitas tentativas de login. Tente novamente em alguns minutos.",
+          }),
+          500: internalErrorResponse,
+        },
+      },
+    },
+    "/auth/me": {
+      get: {
+        tags: ["Autenticação"],
+        summary: "Retorna o usuário da sessão atual",
+        description:
+          "Localiza a sessão pelo hash do token presente no cookie, verifica a expiração e retorna " +
+          "os dados públicos do usuário autenticado.",
+        operationId: "getCurrentUser",
+        security: [{ sessionCookie: [] }],
+        responses: {
+          200: {
+            description: "Usuário autenticado.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AuthUser" },
+                example: userExample,
+              },
+            },
+          },
+          401: unauthorizedResponse,
+          500: internalErrorResponse,
+        },
+      },
+    },
+    "/auth/logout": {
+      post: {
+        tags: ["Autenticação"],
+        summary: "Encerra a sessão atual",
+        description:
+          "Revoga a sessão no PostgreSQL e limpa o cookie com as mesmas opções usadas na criação. " +
+          "Sem cookie de sessão, apenas limpa o cookie e retorna `200`.",
+        operationId: "logoutUser",
+        security: [{ sessionCookie: [] }],
+        responses: {
+          200: {
+            description: "Sessão encerrada e cookie removido.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageResponse" },
+                example: { message: "Sessão encerrada." },
+              },
+            },
+          },
+          403: forbiddenOriginResponse,
+          500: internalErrorResponse,
+        },
+      },
+    },
     "/animals": {
       get: {
         tags: ["Animais"],
         summary: "Lista todos os animais",
         description:
           "Retorna todos os animais cadastrados, ordenados do mais recente para o mais antigo, " +
-          "com os dados públicos do responsável.",
+          "com os dados públicos do responsável. O WhatsApp do responsável nunca é incluído nesta resposta.",
         operationId: "listAnimals",
+        security: [],
         responses: {
           200: {
             description: "Lista de animais (pode ser vazia).",
@@ -132,9 +321,11 @@ export const swaggerSpec = {
         tags: ["Animais"],
         summary: "Cadastra um novo animal",
         description:
-          "Cria um animal vinculado a um usuário existente. O campo `status` é opcional e " +
-          "por padrão o backend utiliza `DISPONIVEL`.",
+          "Cria um animal para o usuário autenticado: o responsável é sempre o dono da sessão " +
+          "(qualquer `userId` enviado pelo cliente é ignorado). O campo `status` é opcional e, " +
+          "por padrão, o backend utiliza `DISPONIVEL`.",
         operationId: "createAnimal",
+        security: [{ sessionCookie: [] }],
         requestBody: {
           required: true,
           content: {
@@ -158,8 +349,35 @@ export const swaggerSpec = {
             error: "Dados inválidos.",
             details: [{ field: "name", message: "Nome é obrigatório." }],
           }),
-          404: notFoundResponse("Usuário"),
-          409: conflictResponse,
+          401: unauthorizedNoCookieResponse,
+          403: forbiddenOriginResponse,
+          500: internalErrorResponse,
+        },
+      },
+    },
+    "/animals/me": {
+      get: {
+        tags: ["Animais"],
+        summary: "Lista os animais do usuário autenticado",
+        description:
+          "Retorna apenas os animais cadastrados pelo usuário da sessão atual, ordenados do mais recente " +
+          "para o mais antigo. Sem contato privado.",
+        operationId: "listMyAnimals",
+        security: [{ sessionCookie: [] }],
+        responses: {
+          200: {
+            description: "Animais do usuário autenticado (pode ser vazia).",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Animal" },
+                },
+                example: [animalExample],
+              },
+            },
+          },
+          401: unauthorizedResponse,
           500: internalErrorResponse,
         },
       },
@@ -170,6 +388,7 @@ export const swaggerSpec = {
         summary: "Busca um animal pelo ID",
         description: "Retorna um animal e os dados públicos do seu responsável.",
         operationId: "getAnimal",
+        security: [],
         parameters: [idParam],
         responses: {
           200: {
@@ -191,8 +410,9 @@ export const swaggerSpec = {
         summary: "Atualiza um animal",
         description:
           "Atualiza parcialmente um animal. É obrigatório informar ao menos um campo. " +
-          "Se `userId` for enviado, o usuário precisa existir.",
+          "Somente o responsável pelo animal pode atualizá-lo.",
         operationId: "updateAnimal",
+        security: [{ sessionCookie: [] }],
         parameters: [idParam],
         requestBody: {
           required: true,
@@ -217,20 +437,56 @@ export const swaggerSpec = {
             error: "Dados inválidos.",
             details: [{ field: "", message: "Informe ao menos um campo para atualização." }],
           }),
+          401: unauthorizedResponse,
+          403: forbiddenResponse,
           404: notFoundResponse("Animal"),
-          409: conflictResponse,
           500: internalErrorResponse,
         },
       },
       delete: {
         tags: ["Animais"],
         summary: "Remove um animal",
-        description: "Remove permanentemente um animal cadastrado.",
+        description: "Remove permanentemente um animal cadastrado. Somente o responsável pode removê-lo.",
         operationId: "deleteAnimal",
+        security: [{ sessionCookie: [] }],
         parameters: [idParam],
         responses: {
           204: { description: "Animal removido. Sem conteúdo de resposta." },
           400: invalidIdResponse,
+          401: unauthorizedResponse,
+          403: forbiddenResponse,
+          404: notFoundResponse("Animal"),
+          500: internalErrorResponse,
+        },
+      },
+    },
+    "/animals/{id}/contact": {
+      get: {
+        tags: ["Animais"],
+        summary: "Consulta o contato do responsável",
+        description:
+          "Retorna o WhatsApp do responsável pelo animal. Exige sessão válida: as rotas públicas " +
+          "de animais nunca incluem esse dado.",
+        operationId: "getAnimalContact",
+        security: [{ sessionCookie: [] }],
+        parameters: [idParam],
+        responses: {
+          200: {
+            description: "Contato do responsável pelo animal.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AnimalContact" },
+                example: {
+                  animalId: "5f1c2e78-9b0a-4c31-8a1f-2d6e7b8c9a01",
+                  animalName: "Amber",
+                  responsibleName: "Maria Silva",
+                  whatsapp: "31999999999",
+                },
+              },
+            },
+          },
+          400: invalidIdResponse,
+          401: unauthorizedResponse,
           404: notFoundResponse("Animal"),
           500: internalErrorResponse,
         },
@@ -242,6 +498,7 @@ export const swaggerSpec = {
         summary: "Busca um usuário pelo ID",
         description: "Retorna os dados públicos de um usuário. A senha nunca é retornada.",
         operationId: "getUser",
+        security: [],
         parameters: [idParam],
         responses: {
           200: {
@@ -250,10 +507,7 @@ export const swaggerSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/User" },
                 example: {
-                  id: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
-                  name: "Maria Silva",
-                  email: "maria@example.com",
-                  whatsapp: "31999999999",
+                  ...userExample,
                   createdAt: "2026-11-17T12:00:00.000Z",
                   updatedAt: "2026-11-17T12:00:00.000Z",
                 },
@@ -268,6 +522,17 @@ export const swaggerSpec = {
     },
   },
   components: {
+    securitySchemes: {
+      sessionCookie: {
+        type: "apiKey",
+        in: "cookie",
+        name: SESSION_COOKIE_NAME,
+        description:
+          "Sessão opaca persistida no PostgreSQL. O token original trafega apenas em um cookie " +
+          "`HttpOnly`; o banco armazena somente seu hash SHA-256. O cookie é estabelecido por " +
+          "`POST /auth/login` e removido por `POST /auth/logout`.",
+      },
+    },
     schemas: {
       Health: {
         type: "object",
@@ -275,6 +540,58 @@ export const swaggerSpec = {
           status: { type: "string", example: "ok" },
         },
         required: ["status"],
+      },
+      RegisterRequest: {
+        type: "object",
+        required: ["name", "email", "password"],
+        properties: {
+          name: { type: "string", minLength: 2, maxLength: 120, example: "Maria Silva" },
+          email: { type: "string", format: "email", example: "maria@example.com" },
+          password: {
+            type: "string",
+            format: "password",
+            minLength: 8,
+            maxLength: 72,
+            description: "Mínimo de 8 caracteres. Armazenado como hash bcrypt.",
+            example: "SenhaSegura123",
+          },
+        },
+      },
+      LoginRequest: {
+        type: "object",
+        required: ["email", "password"],
+        properties: {
+          email: { type: "string", format: "email", example: "maria@example.com" },
+          password: { type: "string", format: "password", example: "SenhaSegura123" },
+          rememberMe: {
+            type: "boolean",
+            default: false,
+            description: "Quando `true`, cria sessão persistente e cookie com validade de 30 dias.",
+          },
+        },
+      },
+      AuthUser: {
+        type: "object",
+        description: "Dados públicos do usuário retornados pela autenticação. Nunca inclui senha ou hash.",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          email: { type: "string", format: "email" },
+        },
+        required: ["id", "name", "email"],
+        example: userExample,
+      },
+      User: {
+        type: "object",
+        description: "Dados públicos de um usuário. Nunca inclui senha ou hash.",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          email: { type: "string", format: "email" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+        required: ["id", "name", "email", "createdAt", "updatedAt"],
       },
       AnimalStatus: {
         type: "string",
@@ -299,33 +616,22 @@ export const swaggerSpec = {
       },
       AnimalOwner: {
         type: "object",
-        description: "Dados públicos do usuário responsável pelo animal.",
+        description: "Dados públicos do usuário responsável pelo animal, sem contato privado.",
         properties: {
           id: { type: "string", format: "uuid" },
           name: { type: "string" },
-          whatsapp: { type: "string", example: "31999999999" },
         },
-        required: ["id", "name", "whatsapp"],
+        required: ["id", "name"],
         example: {
           id: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
           name: "Maria Silva",
-          whatsapp: "31999999999",
         },
-      },
-      User: {
-        type: "object",
-        properties: {
-          id: { type: "string", format: "uuid" },
-          name: { type: "string" },
-          email: { type: "string", format: "email" },
-          whatsapp: { type: "string", example: "31999999999" },
-          createdAt: { type: "string", format: "date-time" },
-          updatedAt: { type: "string", format: "date-time" },
-        },
-        required: ["id", "name", "email", "whatsapp", "createdAt", "updatedAt"],
       },
       Animal: {
         type: "object",
+        description:
+          "Animal com dados públicos do responsável. O WhatsApp do responsável nunca é incluído: " +
+          "use `GET /animals/{id}/contact` com sessão válida.",
         properties: {
           id: { type: "string", format: "uuid" },
           name: { type: "string" },
@@ -335,11 +641,13 @@ export const swaggerSpec = {
           size: { $ref: "#/components/schemas/AnimalSize" },
           description: { type: "string" },
           status: { $ref: "#/components/schemas/AnimalStatus" },
-          whatsapp: { type: "string", example: "31999999999" },
           userId: { type: "string", format: "uuid" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
-          user: { $ref: "#/components/schemas/AnimalOwner" },
+          user: {
+            allOf: [{ $ref: "#/components/schemas/AnimalOwner" }],
+            nullable: true,
+          },
         },
         required: [
           "id",
@@ -350,7 +658,6 @@ export const swaggerSpec = {
           "size",
           "description",
           "status",
-          "whatsapp",
           "userId",
           "createdAt",
           "updatedAt",
@@ -358,8 +665,20 @@ export const swaggerSpec = {
         ],
         example: animalExample,
       },
+      AnimalContact: {
+        type: "object",
+        description: "Contato privado do responsável, disponível apenas com sessão válida.",
+        properties: {
+          animalId: { type: "string", format: "uuid" },
+          animalName: { type: "string" },
+          responsibleName: { type: "string" },
+          whatsapp: { type: "string", example: "31999999999" },
+        },
+        required: ["animalId", "animalName", "responsibleName", "whatsapp"],
+      },
       CreateAnimalInput: {
         type: "object",
+        description: "O responsável é sempre o usuário autenticado; não é possível informar `userId`.",
         properties: {
           name: { type: "string", minLength: 1, example: "Amber" },
           species: { $ref: "#/components/schemas/AnimalSpecies" },
@@ -370,13 +689,12 @@ export const swaggerSpec = {
           whatsapp: {
             type: "string",
             pattern: "^\\d{10,11}$",
-            description: "Somente dígitos, com DDD.",
+            description: "Somente dígitos, com DDD. Retornado apenas via contato autenticado.",
             example: "31999999999",
           },
-          userId: { type: "string", format: "uuid" },
           status: { $ref: "#/components/schemas/AnimalStatus" },
         },
-        required: ["name", "species", "breed", "sex", "size", "description", "whatsapp", "userId"],
+        required: ["name", "species", "breed", "sex", "size", "description", "whatsapp"],
       },
       UpdateAnimalInput: {
         type: "object",
@@ -390,10 +708,14 @@ export const swaggerSpec = {
           size: { $ref: "#/components/schemas/AnimalSize" },
           description: { type: "string", minLength: 1, example: "Gatinha dócil e carinhosa." },
           whatsapp: { type: "string", pattern: "^\\d{10,11}$", example: "31999999999" },
-          userId: { type: "string", format: "uuid" },
           status: { $ref: "#/components/schemas/AnimalStatus" },
         },
         example: { status: "ADOTADO" },
+      },
+      MessageResponse: {
+        type: "object",
+        properties: { message: { type: "string", example: "Sessão encerrada." } },
+        required: ["message"],
       },
       Error: {
         type: "object",
