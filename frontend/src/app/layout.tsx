@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -23,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${nunito.variable} flex min-h-screen flex-col antialiased`}>
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

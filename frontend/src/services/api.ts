@@ -11,10 +11,16 @@ export const API_BASE_URL = normalizedUrl.endsWith("/api")
   ? normalizedUrl
   : `${normalizedUrl}/api`;
 
+export type ApiErrorDetail = {
+  field: string;
+  message: string;
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly details?: ApiErrorDetail[],
   ) {
     super(message);
     this.name = "ApiError";
@@ -27,6 +33,8 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
+      credentials: "include",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
         ...init?.headers,
@@ -38,17 +46,24 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let message = "Não foi possível concluir a solicitação.";
+    let details: ApiErrorDetail[] | undefined;
 
     try {
-      const body = (await response.json()) as { error?: unknown };
+      const body = (await response.json()) as {
+        error?: unknown;
+        details?: ApiErrorDetail[];
+      };
       if (typeof body?.error === "string" && body.error.trim()) {
         message = body.error;
+      }
+      if (Array.isArray(body?.details)) {
+        details = body.details;
       }
     } catch {
       // Mantém a mensagem genérica quando o corpo não é JSON.
     }
 
-    throw new ApiError(message, response.status);
+    throw new ApiError(message, response.status, details);
   }
 
   if (response.status === 204) {

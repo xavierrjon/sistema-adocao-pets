@@ -1,13 +1,35 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const navigationMocks = vi.hoisted(() => ({ pathname: "/" }));
+const navigationMocks = vi.hoisted(() => ({
+  pathname: "/",
+  push: vi.fn(),
+}));
+
+const authMocks = vi.hoisted(() => ({
+  state: {
+    user: null as { id: string; name: string; email: string } | null,
+    isAuthenticated: false,
+    isLoading: false,
+  },
+  logout: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useRouter: () => ({ push: navigationMocks.push, replace: vi.fn(), back: vi.fn() }),
   usePathname: () => navigationMocks.pathname,
   useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    ...authMocks.state,
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: authMocks.logout,
+    refresh: vi.fn(),
+  }),
 }));
 
 import { Navbar } from "./Navbar";
@@ -15,9 +37,14 @@ import { Navbar } from "./Navbar";
 describe("Navbar", () => {
   beforeEach(() => {
     navigationMocks.pathname = "/";
+    navigationMocks.push.mockReset();
+    authMocks.logout.mockReset();
+    authMocks.state.user = null;
+    authMocks.state.isAuthenticated = false;
+    authMocks.state.isLoading = false;
   });
 
-  it("exibe a marca e os links principais", () => {
+  it("exibe a marca, os links principais e os links de autenticação", () => {
     render(<Navbar />);
 
     expect(screen.getByRole("link", { name: "AdoteJá — página inicial" })).toBeInTheDocument();
@@ -27,7 +54,9 @@ describe("Navbar", () => {
     );
     expect(screen.getByRole("link", { name: "Início" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Animais" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Entrar" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Criar conta" })).toHaveAttribute("href", "/cadastro");
+    expect(screen.queryByRole("button", { name: "Sair" })).not.toBeInTheDocument();
   });
 
   it("marca o link ativo conforme a página atual", () => {
@@ -36,6 +65,36 @@ describe("Navbar", () => {
 
     expect(screen.getByRole("link", { name: "Animais" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Início" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("oferece logout para usuário autenticado", async () => {
+    authMocks.state.user = { id: "1", name: "João Silva", email: "joao@email.com" };
+    authMocks.state.isAuthenticated = true;
+    authMocks.logout.mockResolvedValue(undefined);
+
+    const user = userEvent.setup();
+    render(<Navbar />);
+
+    expect(screen.getByText("Olá, João")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Sair" }));
+
+    expect(authMocks.logout).toHaveBeenCalledOnce();
+    await waitFor(() => expect(navigationMocks.push).toHaveBeenCalledWith("/"));
+  });
+
+  it("não afirma que a sessão foi encerrada se o logout falhar", async () => {
+    authMocks.state.user = { id: "1", name: "João Silva", email: "joao@email.com" };
+    authMocks.state.isAuthenticated = true;
+    authMocks.logout.mockRejectedValue(new Error("falha de rede"));
+
+    const user = userEvent.setup();
+    render(<Navbar />);
+
+    await user.click(screen.getByRole("button", { name: "Sair" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível encerrar a sessão");
+    expect(navigationMocks.push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
   });
 
   it("abre e fecha o menu mobile", async () => {
