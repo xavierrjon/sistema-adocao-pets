@@ -64,8 +64,14 @@ DATABASE_URL=postgresql://adoteja:defina-uma-senha@localhost:5432/adoteja?schema
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 NODE_ENV=development
+COOKIE_SAME_SITE=lax
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
 ```
+
+> `FRONTEND_URL` define a origem permitida por CORS e pelo checagem de Origin
+> usada contra CSRF. `COOKIE_SAME_SITE` pode ser `lax`, `strict` ou `none`.
+> Quando frontend e backend estiverem em domínios diferentes, use `none` com
+> `Secure` (produção/HTTPS) e, se necessário, defina `COOKIE_DOMAIN`.
 
 > O arquivo `.env` não é versionado. O `.env.example` contém apenas os nomes das variáveis.
 
@@ -124,23 +130,39 @@ Resposta esperada:
 
 ```text
 GET    /api/health
-GET    /api/animals
-GET    /api/animals/:id
-POST   /api/animals
-PUT    /api/animals/:id
-DELETE /api/animals/:id
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/auth/me
+POST   /api/auth/logout
+GET    /api/animals                 (público)
+GET    /api/animals/:id             (público)
+POST   /api/animals                 (autenticado)
+PUT    /api/animals/:id             (autenticado, apenas o responsável)
+DELETE /api/animals/:id             (autenticado, apenas o responsável)
 GET    /api/users/:id
 ```
 
-### Documentação Swagger
+### Autenticação
 
-Com o backend em execução, a documentação interativa fica disponível em:
+A API usa sessões persistidas no PostgreSQL. O token original é enviado apenas
+em um cookie `HttpOnly` (`adoteja_session`); o banco armazena somente seu hash
+SHA-256. Senhas são armazenadas como hash bcrypt e nunca aparecem nas respostas.
 
-```text
-http://localhost:3001/api/docs
-```
+- `POST /api/auth/register` — cadastra o usuário e retorna `id`, `name` e `email`.
+- `POST /api/auth/login` — aceita `rememberMe`; com `true`, sessão e cookie duram 30 dias.
+- `GET /api/auth/me` — recupera o usuário da sessão atual (usado ao carregar o frontend).
+- `POST /api/auth/logout` — revoga a sessão e limpa o cookie.
 
-O documento OpenAPI também pode ser consultado em `http://localhost:3001/api/docs/openapi.json`.
+O frontend consome esses endpoints com `credentials: "include"` e não grava
+tokens em `localStorage`/`sessionStorage`. A proteção visual das rotas é
+complementar à autorização feita no backend.
+
+### Documentação da API (Swagger)
+
+Com o backend em execução:
+
+- Swagger UI: `http://localhost:3001/api/docs`
+- Especificação OpenAPI: `http://localhost:3001/api/docs/openapi.json`
 
 ## Banco de dados
 
@@ -153,7 +175,7 @@ npx prisma migrate dev
 npx prisma studio
 ```
 
-A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas.
+A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas. A segunda migration renomeia a coluna de senha para `passwordHash` (convertendo senhas legadas em hashes bcrypt) e cria a tabela `sessions`.
 
 ## Scripts úteis
 
