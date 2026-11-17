@@ -93,7 +93,7 @@ describe("RegisterForm", () => {
   });
 
   it("mostra erro específico para e-mail já cadastrado", async () => {
-    mocks.register.mockRejectedValue(new ApiError("E-mail já cadastrado."));
+    mocks.register.mockRejectedValue(new ApiError("E-mail já cadastrado.", 409));
     const event = userEvent.setup();
     render(<RegisterForm />);
 

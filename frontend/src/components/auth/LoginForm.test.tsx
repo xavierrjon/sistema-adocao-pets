@@ -98,7 +98,7 @@ describe("LoginForm", () => {
   });
 
   it("exibe mensagem genérica para credenciais inválidas", async () => {
-    mocks.login.mockRejectedValue(new ApiError("E-mail ou senha inválidos."));
+    mocks.login.mockRejectedValue(new ApiError("E-mail ou senha inválidos.", 401));
     const event = userEvent.setup();
     render(<LoginForm />);
 

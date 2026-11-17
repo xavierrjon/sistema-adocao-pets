@@ -79,7 +79,7 @@ describe("AuthProvider", () => {
   });
 
   it("considera usuário não autenticado quando não há sessão", async () => {
-    mocks.getCurrentUser.mockRejectedValue(new ApiError("Sessão inválida."));
+    mocks.getCurrentUser.mockRejectedValue(new ApiError("Sessão inválida.", 401));
 
     render(
       <AuthProvider>
@@ -110,7 +110,7 @@ describe("AuthProvider", () => {
   });
 
   it("atualiza o estado após login e limpa após logout", async () => {
-    mocks.getCurrentUser.mockRejectedValue(new ApiError("Sem sessão."));
+    mocks.getCurrentUser.mockRejectedValue(new ApiError("Sem sessão.", 401));
     mocks.login.mockResolvedValue(user);
     mocks.logout.mockResolvedValue({ message: "Sessão encerrada." });
 
@@ -131,7 +131,7 @@ describe("AuthProvider", () => {
 
   it("mantém o estado autenticado se o logout falhar", async () => {
     mocks.getCurrentUser.mockResolvedValue(user);
-    mocks.logout.mockRejectedValue(new ApiError("Não foi possível conectar ao servidor."));
+    mocks.logout.mockRejectedValue(new ApiError("Não foi possível conectar ao servidor.", 0));
 
     const event = userEvent.setup();
     render(
