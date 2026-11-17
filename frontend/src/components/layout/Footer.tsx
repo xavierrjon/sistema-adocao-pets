@@ -20,7 +20,7 @@ export function Footer() {
               alt="AdoteJá"
               width={120}
               height={68}
-              className="h-9 w-auto object-contain"
+              className="h-21 w-auto object-contain"
             />
           </Link>
           <p className="text-sm text-slate-500">
