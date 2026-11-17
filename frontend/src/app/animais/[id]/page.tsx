@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AdoptionContact } from "@/components/animals/AdoptionContact";
@@ -70,11 +71,24 @@ export default function AnimalDetailsPage() {
 
       <article className="mt-6 space-y-8">
         <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100">
-          <img
-            src="/images/animals/fallback.svg"
-            alt={`Ilustração de ${animal.name}, ${speciesArticle(animal.species)} ${animal.species.toLowerCase()}`}
-            className="aspect-[16/9] w-full object-cover"
-          />
+          <div className="relative aspect-[16/9] bg-brand-50">
+            {animal.imageUrl ? (
+              <Image
+                src={animal.imageUrl}
+                alt={`Foto de ${animal.name}, ${speciesArticle(animal.species)} ${animal.species.toLowerCase()}`}
+                fill
+                sizes="(min-width: 896px) 896px, 100vw"
+                priority
+                className="object-cover"
+              />
+            ) : (
+              <img
+                src="/images/animals/fallback.svg"
+                alt={`Ilustração de ${animal.name}, ${speciesArticle(animal.species)} ${animal.species.toLowerCase()}`}
+                className="aspect-[16/9] w-full object-cover"
+              />
+            )}
+          </div>
         </div>
 
         <header className="space-y-3">

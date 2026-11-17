@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { AnimalForm, type AnimalFormPayload } from "@/components/animals/AnimalForm";
+import { AnimalForm, type AnimalFormImage, type AnimalFormPayload } from "@/components/animals/AnimalForm";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { createAnimal } from "@/services/animals";
 
 function NewAnimalContent() {
   const router = useRouter();
 
-  async function handleSubmit(values: AnimalFormPayload) {
-    await createAnimal({ ...values, whatsapp: values.whatsapp ?? "" });
+  async function handleSubmit(values: AnimalFormPayload, image: AnimalFormImage) {
+    await createAnimal(values, image.file);
     router.push("/meus-animais?feedback=cadastrado");
   }
 

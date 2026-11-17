@@ -32,17 +32,28 @@ export function listMyAnimals(): Promise<Animal[]> {
   return request<Animal[]>("/animals/me");
 }
 
-export function createAnimal(data: CreateAnimalInput): Promise<Animal> {
+/**
+ * Campos do anúncio enviados no cadastro. O WhatsApp é opcional na tipagem
+ * porque o formulário de edição não o pré-preenche (privacidade); o backend
+ * valida a presença dele no cadastro.
+ */
+export type CreateAnimalFormData = Omit<CreateAnimalInput, "whatsapp"> & { whatsapp?: string };
+
+export function createAnimal(data: CreateAnimalFormData, image?: File | null): Promise<Animal> {
   return request<Animal>("/animals", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: buildAnimalFormData(data, { file: image ?? null, removeImage: false }),
   });
 }
 
-export function updateAnimal(id: string, data: UpdateAnimalInput): Promise<Animal> {
+export function updateAnimal(
+  id: string,
+  data: UpdateAnimalInput,
+  image?: { file?: File | null; removeImage?: boolean },
+): Promise<Animal> {
   return request<Animal>(`/animals/${encodeURIComponent(id)}`, {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: buildAnimalFormData(data, image),
   });
 }
 
@@ -50,4 +61,29 @@ export function deleteAnimal(id: string): Promise<void> {
   return request<void>(`/animals/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+/**
+ * Monta o multipart esperado pela API: campos como texto, o arquivo no campo
+ * `image` e `removeImage=true` quando o usuário removeu a foto na edição.
+ */
+function buildAnimalFormData(
+  data: Record<string, string | undefined>,
+  image?: { file?: File | null; removeImage?: boolean },
+): FormData {
+  const form = new FormData();
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value != null && value !== "") {
+      form.append(key, value);
+    }
+  }
+
+  if (image?.file) {
+    form.append("image", image.file);
+  } else if (image?.removeImage) {
+    form.append("removeImage", "true");
+  }
+
+  return form;
 }

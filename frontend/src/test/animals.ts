@@ -10,6 +10,7 @@ export function makeAnimal(overrides: Partial<Animal> = {}): Animal {
     size: "Medio",
     description: "Gatinha dócil e carinhosa que procura um novo lar.",
     status: "DISPONIVEL",
+    imageUrl: null,
     userId: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
     createdAt: "2026-11-17T12:00:00.000Z",
     updatedAt: "2026-11-17T12:00:00.000Z",

@@ -1,11 +1,28 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
 import { makeAnimal } from "@/test/animals";
 import { AnimalForm } from "./AnimalForm";
 
 const animal = makeAnimal();
+
+const createObjectURLMock = vi.fn(() => "blob:preview-da-imagem");
+const revokeObjectURLMock = vi.fn();
+
+beforeAll(() => {
+  // jsdom não implementa URL.createObjectURL.
+  Object.defineProperty(URL, "createObjectURL", {
+    value: createObjectURLMock,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(URL, "revokeObjectURL", {
+    value: revokeObjectURLMock,
+    configurable: true,
+    writable: true,
+  });
+});
 
 function renderCreateForm(onSubmit = vi.fn().mockResolvedValue(undefined)) {
   render(
@@ -83,15 +100,18 @@ describe("AnimalForm", () => {
     await user.click(screen.getByRole("button", { name: "Cadastrar animal" }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith({
-      name: "Amber",
-      species: "Gato",
-      breed: "SRD",
-      sex: "Femea",
-      size: "Medio",
-      description: "Gatinha dócil que procura um lar.",
-      whatsapp: "11999999999",
-    });
+    expect(onSubmit).toHaveBeenCalledWith(
+      {
+        name: "Amber",
+        species: "Gato",
+        breed: "SRD",
+        sex: "Femea",
+        size: "Medio",
+        description: "Gatinha dócil que procura um lar.",
+        whatsapp: "11999999999",
+      },
+      expect.objectContaining({ file: null, removeImage: false }),
+    );
   });
 
   it("preenche os campos com os dados atuais no modo de edição", () => {
@@ -128,6 +148,7 @@ describe("AnimalForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({ whatsapp: "21988887777" }),
+      expect.objectContaining({ file: null, removeImage: false }),
     );
   });
 
@@ -192,5 +213,143 @@ describe("AnimalForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Cadastrar animal" }));
     expect(onSubmit).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("AnimalForm — imagem do animal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getFileInput(container: HTMLElement): HTMLInputElement {
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("Campo de arquivo não encontrado");
+    return input;
+  }
+
+  it("exibe a imagem atual no modo de edição", () => {
+    render(
+      <AnimalForm
+        initialAnimal={{ ...animal, imageUrl: "https://res.cloudinary.com/exemplo/foto.jpg" }}
+        submitLabel="Salvar alterações"
+        submittingLabel="Salvando..."
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByAltText("Foto atual do animal")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Substituir imagem" })).toBeInTheDocument();
+  });
+
+  it("envia o arquivo selecionado junto com o cadastro", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <AnimalForm submitLabel="Cadastrar animal" submittingLabel="Cadastrando..." onSubmit={onSubmit} />,
+    );
+
+    const file = new File(["conteudo"], "amber.png", { type: "image/png" });
+    await user.upload(getFileInput(container), file);
+
+    expect(screen.getByAltText("Pré-visualização da imagem selecionada: amber.png")).toBeInTheDocument();
+
+    await fillCreateForm(user);
+    await user.click(screen.getByRole("button", { name: "Cadastrar animal" }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const sentImage = onSubmit.mock.calls[0][1];
+    expect(sentImage.file).toBe(file);
+    expect(sentImage.removeImage).toBe(false);
+  });
+
+  it("permite substituir a imagem previamente selecionada", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <AnimalForm submitLabel="Cadastrar animal" submittingLabel="Cadastrando..." onSubmit={onSubmit} />,
+    );
+
+    const fileInput = getFileInput(container);
+    await user.upload(fileInput, new File(["a"], "primeira.png", { type: "image/png" }));
+    await user.upload(fileInput, new File(["b"], "segunda.png", { type: "image/png" }));
+
+    expect(screen.getByAltText("Pré-visualização da imagem selecionada: segunda.png")).toBeInTheDocument();
+    // A primeira prévia é revogada ao ser substituída.
+    expect(revokeObjectURLMock).toHaveBeenCalled();
+  });
+
+  it("rejeita arquivos com formato não permitido", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <AnimalForm submitLabel="Cadastrar animal" submittingLabel="Cadastrando..." onSubmit={onSubmit} />,
+    );
+
+    // user.upload respeita o atributo accept; um arquivo inesperado chegando
+    // ao handler (ex.: arrastar outro tipo) é simulado com fireEvent.
+    fireEvent.change(getFileInput(container), {
+      target: { files: [new File(["x"], "documento.pdf", { type: "application/pdf" })] },
+    });
+
+    expect(
+      await screen.findByText("Formato não suportado. Selecione uma imagem JPEG, PNG ou WebP."),
+    ).toBeInTheDocument();
+    expect(screen.queryByAltText(/Pré-visualização/)).not.toBeInTheDocument();
+  });
+
+  it("rejeita arquivos acima do limite de tamanho", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <AnimalForm submitLabel="Cadastrar animal" submittingLabel="Cadastrando..." onSubmit={onSubmit} />,
+    );
+
+    const bigFile = new File([new ArrayBuffer(5 * 1024 * 1024 + 1)], "grande.png", { type: "image/png" });
+    await user.upload(getFileInput(container), bigFile);
+
+    expect(await screen.findByText("A imagem deve ter no máximo 5 MB.")).toBeInTheDocument();
+    expect(screen.queryByAltText(/Pré-visualização/)).not.toBeInTheDocument();
+  });
+
+  it("permite remover a imagem atual na edição e comunica a API", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(
+      <AnimalForm
+        initialAnimal={{ ...animal, imageUrl: "https://res.cloudinary.com/exemplo/foto.jpg" }}
+        submitLabel="Salvar alterações"
+        submittingLabel="Salvando..."
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Remover imagem" }));
+
+    expect(screen.getByText("A imagem atual será removida do anúncio quando você salvar as alterações.")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/^WhatsApp/), "21988887777");
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][1]).toEqual({ file: null, removeImage: true });
+  });
+
+  it("descarta a seleção quando o usuário remove uma imagem nova no cadastro", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <AnimalForm submitLabel="Cadastrar animal" submittingLabel="Cadastrando..." onSubmit={onSubmit} />,
+    );
+
+    await user.upload(getFileInput(container), new File(["a"], "amber.png", { type: "image/png" }));
+    await user.click(screen.getByRole("button", { name: "Remover imagem" }));
+
+    expect(screen.getByAltText("Nenhuma imagem selecionada")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remover imagem" })).not.toBeInTheDocument();
+
+    await fillCreateForm(user);
+    await user.click(screen.getByRole("button", { name: "Cadastrar animal" }));
+
+    expect(onSubmit.mock.calls[0][1]).toEqual({ file: null, removeImage: false });
   });
 });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { AnimalForm, type AnimalFormPayload } from "@/components/animals/AnimalForm";
+import { AnimalForm, type AnimalFormImage, type AnimalFormPayload } from "@/components/animals/AnimalForm";
 import {
   AnimalDetailsError,
   AnimalDetailsLoading,
@@ -53,8 +53,11 @@ function EditAnimalContent() {
 
   useEffect(loadAnimal, [loadAnimal]);
 
-  async function handleSubmit(values: AnimalFormPayload) {
-    await updateAnimal(id, values);
+  async function handleSubmit(values: AnimalFormPayload, image: AnimalFormImage) {
+    await updateAnimal(id, values, {
+      file: image.file,
+      removeImage: image.removeImage,
+    });
     router.push("/meus-animais?feedback=atualizado");
   }
 

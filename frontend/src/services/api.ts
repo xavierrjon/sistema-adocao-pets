@@ -35,8 +35,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
       credentials: "include",
       cache: "no-store",
+      // FormData define o próprio Content-Type com boundary; só JSON precisa do header.
       headers: {
-        "Content-Type": "application/json",
+        ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...init?.headers,
       },
     });

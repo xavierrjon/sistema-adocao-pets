@@ -1,7 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeAnimal } from "@/test/animals";
 import { AnimalCard } from "./AnimalCard";
+
+// next/image exige a configuração do Next em tempo de build; nos testes de
+// componente substituímos pelo <img> equivalente.
+vi.mock("next/image", () => ({
+  default: (props: { src: string; alt: string }) => <img src={props.src} alt={props.alt} />,
+}));
 
 const mockAnimal = makeAnimal();
 
@@ -26,5 +32,15 @@ describe("AnimalCard", () => {
 
     const image = screen.getByAltText("Ilustração de Amber, um gato");
     expect(image).toHaveAttribute("src", "/images/animals/fallback.svg");
+  });
+
+  it("exibe a foto do animal quando ele possui imagem", () => {
+    render(
+      <AnimalCard {...mockAnimal} imageUrl="https://res.cloudinary.com/exemplo/foto.jpg" />,
+    );
+
+    const image = screen.getByAltText("Foto de Amber, um gato");
+    expect(image).toHaveAttribute("src", "https://res.cloudinary.com/exemplo/foto.jpg");
+    expect(screen.queryByAltText("Ilustração de Amber, um gato")).not.toBeInTheDocument();
   });
 });

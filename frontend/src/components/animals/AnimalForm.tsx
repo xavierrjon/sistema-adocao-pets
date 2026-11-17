@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { AnimalImageField } from "./AnimalImageField";
 import { detailsToFieldErrors } from "@/lib/form-errors";
 import { ApiError } from "@/services/api";
 import type { Animal } from "@/types/animal";
@@ -17,6 +18,10 @@ const NAME_MAX_LENGTH = 60;
 const BREED_MAX_LENGTH = 60;
 const DESCRIPTION_MAX_LENGTH = 1000;
 
+/** Mesmas regras validadas pelo backend (middleware de upload e storage). */
+const IMAGE_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 /**
  * Dados normalizados enviados pelo formulário.
  * O WhatsApp é opcional porque a API não devolve o contato salvo (medida de
@@ -30,6 +35,13 @@ export type AnimalFormPayload = {
   size: string;
   description: string;
   whatsapp?: string;
+};
+
+/** Imagem selecionada no formulário e enviada junto com os dados do anúncio. */
+export type AnimalFormImage = {
+  file: File | null;
+  /** Apenas no modo de edição: remove a foto atual sem enviar outra. */
+  removeImage: boolean;
 };
 
 type AnimalFormValues = {
@@ -49,7 +61,7 @@ type AnimalFormProps = {
   initialAnimal?: Animal;
   submitLabel: string;
   submittingLabel: string;
-  onSubmit: (values: AnimalFormPayload) => Promise<void>;
+  onSubmit: (values: AnimalFormPayload, image: AnimalFormImage) => Promise<void>;
 };
 
 const EMPTY_VALUES: AnimalFormValues = {
@@ -77,6 +89,7 @@ function valuesFromAnimal(animal: Animal): AnimalFormValues {
 
 export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubmit }: AnimalFormProps) {
   const isEditing = Boolean(initialAnimal);
+  const existingImageUrl = initialAnimal?.imageUrl ?? null;
   const [values, setValues] = useState<AnimalFormValues>(() =>
     initialAnimal ? valuesFromAnimal(initialAnimal) : EMPTY_VALUES,
   );
@@ -84,8 +97,62 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estado da imagem: arquivo novo, prévia e remoção da foto atual (edição).
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   function setValue<K extends keyof AnimalFormValues>(key: K, value: AnimalFormValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }));
+  }
+
+  function clearSelectedImage() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setImageFile(null);
+    setPreviewUrl(null);
+  }
+
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    // Permite selecionar o mesmo arquivo novamente depois de um erro.
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!IMAGE_ALLOWED_TYPES.includes(file.type)) {
+      setImageError("Formato não suportado. Selecione uma imagem JPEG, PNG ou WebP.");
+      return;
+    }
+
+    if (file.size > IMAGE_MAX_SIZE_BYTES) {
+      setImageError("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+
+    clearSelectedImage();
+    setImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setRemoveImage(false);
+    setImageError(null);
+  }
+
+  function handleRemoveImage() {
+    clearSelectedImage();
+    // No modo de edição, a remoção precisa ser comunicada à API ao salvar.
+    setRemoveImage(Boolean(existingImageUrl));
+    setImageError(null);
   }
 
   function validate(): boolean {
@@ -138,15 +205,21 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
     const whatsapp = values.whatsapp.replace(/\D/g, "");
 
     try {
-      await onSubmit({
-        name: values.name.trim(),
-        species: values.species,
-        breed: values.breed.trim(),
-        sex: values.sex,
-        size: values.size,
-        description: values.description.trim(),
-        ...(whatsapp ? { whatsapp } : {}),
-      });
+      await onSubmit(
+        {
+          name: values.name.trim(),
+          species: values.species,
+          breed: values.breed.trim(),
+          sex: values.sex,
+          size: values.size,
+          description: values.description.trim(),
+          ...(whatsapp ? { whatsapp } : {}),
+        },
+        {
+          file: imageFile,
+          removeImage: !imageFile && removeImage,
+        },
+      );
     } catch (error) {
       if (error instanceof ApiError && error.details && error.details.length > 0) {
         setFieldErrors(detailsToFieldErrors(error) as FieldErrors);
@@ -267,6 +340,28 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
           error={fieldErrors.whatsapp}
         />
       </section>
+
+      <AnimalImageField
+        id="animal-image"
+        existingImageUrl={existingImageUrl}
+        previewUrl={previewUrl}
+        selectedFileName={imageFile?.name ?? null}
+        willRemoveExisting={!imageFile && removeImage}
+        error={imageError}
+        isSubmitting={isSubmitting}
+        onSelectImage={() => fileInputRef.current?.click()}
+        onRemoveImage={handleRemoveImage}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={IMAGE_ALLOWED_TYPES.join(",")}
+        onChange={handleImageChange}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
 
       <Button type="submit" size="lg" disabled={isSubmitting}>
         {isSubmitting ? submittingLabel : submitLabel}

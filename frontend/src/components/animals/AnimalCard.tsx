@@ -1,12 +1,15 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { speciesArticle } from "@/lib/species";
 import { AnimalStatusBadge } from "./AnimalStatusBadge";
 import type { Animal } from "@/types/animal";
 
-export type AnimalCardProps = Pick<Animal, "id" | "name" | "species" | "breed" | "status">;
+const FALLBACK_IMAGE = "/images/animals/fallback.svg";
 
-export function AnimalCard({ id, name, species, breed, status }: AnimalCardProps) {
+export type AnimalCardProps = Pick<Animal, "id" | "name" | "species" | "breed" | "status" | "imageUrl">;
+
+export function AnimalCard({ id, name, species, breed, status, imageUrl }: AnimalCardProps) {
   return (
     <Link
       href={`/animais/${id}`}
@@ -14,12 +17,22 @@ export function AnimalCard({ id, name, species, breed, status }: AnimalCardProps
       className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-brand-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-brand-50">
-        <img
-          src="/images/animals/fallback.svg"
-          alt={`Ilustração de ${name}, ${speciesArticle(species)} ${species.toLowerCase()}`}
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={`Foto de ${name}, ${speciesArticle(species)} ${species.toLowerCase()}`}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <img
+            src={FALLBACK_IMAGE}
+            alt={`Ilustração de ${name}, ${speciesArticle(species)} ${species.toLowerCase()}`}
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+          />
+        )}
         <AnimalStatusBadge status={status} className="absolute left-3 top-3 shadow-sm" />
       </div>
 
