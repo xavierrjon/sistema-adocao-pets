@@ -8,7 +8,6 @@ export async function getUserById(id: string) {
       id: true,
       name: true,
       email: true,
-      whatsapp: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -18,5 +17,12 @@ export async function getUserById(id: string) {
     throw new HttpError(404, "Usuário não encontrado.");
   }
 
-  return user;
+  // Constrói a resposta explicitamente para nunca vazar campos privados.
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }

@@ -5,7 +5,6 @@ export type AnimalStatus = "DISPONIVEL" | "EM_PROCESSO" | "ADOTADO";
 export type AnimalOwner = {
   id: string;
   name: string;
-  whatsapp: string;
 };
 
 export type Animal = {
@@ -17,11 +16,18 @@ export type Animal = {
   size: string;
   description: string;
   status: AnimalStatus;
-  whatsapp: string;
   userId: string;
   createdAt: string;
   updatedAt: string;
-  user: AnimalOwner;
+  user: AnimalOwner | null;
+};
+
+/** Contato do responsável: retornado apenas para usuários autenticados. */
+export type AnimalContact = {
+  animalId: string;
+  animalName: string;
+  responsibleName: string;
+  whatsapp: string;
 };
 
 export type User = {
@@ -35,7 +41,7 @@ export type User = {
 
 export type CreateAnimalInput = Pick<
   Animal,
-  "name" | "species" | "breed" | "sex" | "size" | "description" | "whatsapp" | "userId"
-> & { status?: AnimalStatus };
+  "name" | "species" | "breed" | "sex" | "size" | "description"
+> & { whatsapp: string; status?: AnimalStatus };
 
 export type UpdateAnimalInput = Partial<CreateAnimalInput>;

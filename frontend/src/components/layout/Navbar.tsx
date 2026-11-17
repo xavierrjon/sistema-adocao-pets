@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/Button";
+import { usePathname, useRouter } from "next/navigation";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { CloseIcon, MenuIcon } from "@/components/ui/icons";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_LINKS = [
   { href: "/", label: "Início" },
@@ -13,7 +14,11 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   function isLinkActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -26,6 +31,87 @@ export function Navbar() {
         ? "bg-brand-50 text-brand-700"
         : "text-slate-600 hover:bg-brand-50 hover:text-brand-700",
     ].join(" ");
+  }
+
+  async function handleLogout() {
+    setLogoutError(null);
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      setIsMenuOpen(false);
+      router.push("/");
+    } catch {
+      setLogoutError("Não foi possível encerrar a sessão. Tente novamente.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
+  function renderAuthActions(mobile = false) {
+    if (isLoading) {
+      return <span aria-hidden="true" className="block h-9 w-24 animate-pulse rounded-full bg-slate-100" />;
+    }
+
+    if (isAuthenticated) {
+      const firstName = user?.name.trim().split(" ")[0] ?? "Usuário";
+      const accountLinks = [
+        { href: "/meus-animais", label: "Meus animais" },
+        { href: "/perfil", label: "Meu perfil" },
+      ];
+
+      return (
+        <div className={mobile ? "flex flex-col gap-2" : "flex items-center gap-3"}>
+          <span className="text-sm font-semibold text-brand-800">Olá, {firstName}</span>
+          {accountLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setIsMenuOpen(false)}
+              className={
+                mobile
+                  ? "w-full text-left text-sm font-bold text-brand-700 hover:underline"
+                  : "hidden text-sm font-bold text-brand-700 hover:underline lg:inline"
+              }
+            >
+              {label}
+            </Link>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            className={mobile ? "w-full" : ""}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? "Saindo..." : "Sair"}
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className={mobile ? "flex flex-col gap-3 pt-2" : "flex items-center gap-3"}>
+        <Link
+          href="/login"
+          onClick={() => setIsMenuOpen(false)}
+          className={buttonClasses({ variant: "outline", size: "sm", className: mobile ? "w-full" : "" })}
+        >
+          Entrar
+        </Link>
+        <Link
+          href="/cadastro"
+          onClick={() => setIsMenuOpen(false)}
+          className={
+            mobile
+              ? "text-center text-sm font-bold text-brand-700 hover:underline"
+              : "hidden text-sm font-bold text-brand-700 hover:underline lg:inline"
+          }
+        >
+          Criar conta
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -51,10 +137,7 @@ export function Navbar() {
               {label}
             </Link>
           ))}
-          {/* Espaço reservado para a autenticação (etapa futura). */}
-          <Button variant="outline" size="sm" className="ml-3" title="Disponível em breve">
-            Entrar
-          </Button>
+          {renderAuthActions()}
         </nav>
 
         <button
@@ -73,7 +156,7 @@ export function Navbar() {
         <nav
           id="mobile-menu"
           aria-label="Navegação principal (mobile)"
-          className="border-t border-slate-100 bg-white px-4 pb-4 pt-2 md:hidden"
+          className="border-t border-slate-100 bg-white px-4 pb-5 pt-2 md:hidden"
         >
           <ul className="flex flex-col gap-1">
             {NAV_LINKS.map(({ href, label }) => (
@@ -88,15 +171,19 @@ export function Navbar() {
                 </Link>
               </li>
             ))}
-            <li className="pt-2">
-              {/* Espaço reservado para a autenticação (etapa futura). */}
-              <Button variant="outline" size="sm" className="w-full" title="Disponível em breve">
-                Entrar
-              </Button>
-            </li>
+            <li>{renderAuthActions(true)}</li>
           </ul>
         </nav>
       )}
+
+      {logoutError ? (
+        <p
+          role="alert"
+          className="fixed bottom-4 right-4 z-50 max-w-xs rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-red-700 shadow-lg ring-1 ring-red-100"
+        >
+          {logoutError}
+        </p>
+      ) : null}
     </header>
   );
 }

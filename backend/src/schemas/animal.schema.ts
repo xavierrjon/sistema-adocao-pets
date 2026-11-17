@@ -10,6 +10,7 @@ const whatsappSchema = z
   .trim()
   .regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos.");
 
+// O responsável pelo anúncio é sempre o usuário autenticado; userId nunca vem do cliente.
 const animalFields = {
   name: z.string().trim().min(1, "Nome é obrigatório."),
   species: z.enum(ANIMAL_SPECIES, {
@@ -24,7 +25,6 @@ const animalFields = {
   }),
   description: z.string().trim().min(1, "Descrição é obrigatória."),
   whatsapp: whatsappSchema,
-  userId: z.string().uuid("userId deve ser um UUID válido."),
   status: z
     .enum(ANIMAL_STATUSES, {
       message: `Status deve ser: ${ANIMAL_STATUSES.join(", ")}.`,
