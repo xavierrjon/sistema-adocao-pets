@@ -127,7 +127,7 @@ export function Navbar() {
             alt="AdoteJá"
             width={120}
             height={68}
-            className="h-10 w-auto object-contain"
+            className="h-21 w-auto object-contain"
           />
         </Link>
 
