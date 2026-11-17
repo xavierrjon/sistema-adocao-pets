@@ -64,7 +64,7 @@ DATABASE_URL=postgresql://adoteja:defina-uma-senha@localhost:5432/adoteja?schema
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 NODE_ENV=development
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
 ```
 
 > O arquivo `.env` não é versionado. O `.env.example` contém apenas os nomes das variáveis.
@@ -131,6 +131,16 @@ PUT    /api/animals/:id
 DELETE /api/animals/:id
 GET    /api/users/:id
 ```
+
+### Documentação Swagger
+
+Com o backend em execução, a documentação interativa fica disponível em:
+
+```text
+http://localhost:3001/api/docs
+```
+
+O documento OpenAPI também pode ser consultado em `http://localhost:3001/api/docs/openapi.json`.
 
 ## Banco de dados
 
