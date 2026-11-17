@@ -7,7 +7,7 @@ import { AnimalGrid } from "@/components/animals/AnimalGrid";
 import { AnimalsEmptyState, AnimalsErrorState } from "@/components/animals/AnimalStates";
 import { SearchBar } from "@/components/home/SearchBar";
 import { Button } from "@/components/ui/Button";
-import { api } from "@/lib/api";
+import { getAnimals } from "@/services/animals";
 import { matchesCategory, type AnimalCategory } from "@/lib/categories";
 import type { Animal } from "@/types/animal";
 
@@ -32,8 +32,7 @@ function AnimaisContent() {
     setIsLoading(true);
     setHasError(false);
 
-    api
-      .getAnimals()
+    getAnimals()
       .then(setAnimals)
       .catch(() => setHasError(true))
       .finally(() => setIsLoading(false));

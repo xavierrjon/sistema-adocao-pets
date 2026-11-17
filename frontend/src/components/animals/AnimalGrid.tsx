@@ -13,7 +13,7 @@ export function AnimalGrid({ animals, isLoading = false, loadingCount = 6 }: Ani
   if (isLoading) {
     return (
       <div>
-        <p role="status" className="sr-only">
+        <p role="status" className="mb-4 text-sm font-semibold text-brand-700">
           Carregando animais...
         </p>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
