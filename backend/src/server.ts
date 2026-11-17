@@ -5,7 +5,9 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import express from "express";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
 import routes from "./routes";
+import { swaggerSpec } from "./config/swagger";
 import { errorHandler, notFoundHandler } from "./middlewares/error-handler";
 
 const app = express();
@@ -34,6 +36,19 @@ app.use(
 );
 
 app.use(express.json());
+
+app.get("/api/docs/openapi.json", (_request, response) => {
+  response.status(200).json(swaggerSpec);
+});
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: "AdoteJá API — Documentação",
+    swaggerOptions: { persistAuthorization: true },
+  }),
+);
+
 app.use("/api", routes);
 
 app.use(notFoundHandler);

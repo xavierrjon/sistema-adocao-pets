@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { CloseIcon, MenuIcon, PawIcon } from "@/components/ui/icons";
+import { CloseIcon, MenuIcon } from "@/components/ui/icons";
 
 const NAV_LINKS = [
   { href: "/", label: "Início" },
@@ -36,12 +36,13 @@ export function Navbar() {
           className="flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           aria-label="AdoteJá — página inicial"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white">
-            <PawIcon className="h-5 w-5" />
-          </span>
-          <span className="text-xl font-extrabold tracking-tight text-brand-950">
-            Adote<span className="text-brand-600">Já</span>
-          </span>
+          <img
+            src="/images/logo-adoteja.svg"
+            alt="AdoteJá"
+            width={120}
+            height={68}
+            className="h-10 w-auto object-contain"
+          />
         </Link>
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-1 md:flex">

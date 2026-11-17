@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PawIcon } from "@/components/ui/icons";
 
 const FOOTER_LINKS = [
   { href: "/", label: "Início" },
@@ -16,12 +15,13 @@ export function Footer() {
             className="flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             aria-label="AdoteJá — página inicial"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-white">
-              <PawIcon className="h-4 w-4" />
-            </span>
-            <span className="text-lg font-extrabold tracking-tight text-brand-950">
-              Adote<span className="text-brand-600">Já</span>
-            </span>
+            <img
+              src="/images/logo-adoteja.svg"
+              alt="AdoteJá"
+              width={120}
+              height={68}
+              className="h-9 w-auto object-contain"
+            />
           </Link>
           <p className="text-sm text-slate-500">
             Conectando animais que precisam de um lar a famílias que precisam deles.

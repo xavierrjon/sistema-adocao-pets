@@ -1,15 +1,12 @@
 import Link from "next/link";
-import { ArrowRightIcon, MapPinIcon } from "@/components/ui/icons";
+import { ArrowRightIcon } from "@/components/ui/icons";
 import { speciesArticle } from "@/lib/species";
 import { AnimalStatusBadge } from "./AnimalStatusBadge";
 import type { Animal } from "@/types/animal";
 
-export type AnimalCardProps = Pick<
-  Animal,
-  "id" | "name" | "species" | "breed" | "location" | "imageUrl" | "status"
->;
+export type AnimalCardProps = Pick<Animal, "id" | "name" | "species" | "breed" | "status">;
 
-export function AnimalCard({ id, name, species, breed, location, imageUrl, status }: AnimalCardProps) {
+export function AnimalCard({ id, name, species, breed, status }: AnimalCardProps) {
   return (
     <Link
       href={`/animais/${id}`}
@@ -18,7 +15,7 @@ export function AnimalCard({ id, name, species, breed, location, imageUrl, statu
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-brand-50">
         <img
-          src={imageUrl ?? "/images/animals/fallback.svg"}
+          src="/images/animals/fallback.svg"
           alt={`Ilustração de ${name}, ${speciesArticle(species)} ${species.toLowerCase()}`}
           loading="lazy"
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
@@ -32,13 +29,6 @@ export function AnimalCard({ id, name, species, breed, location, imageUrl, statu
           {species}
           {breed ? ` · ${breed}` : ""}
         </p>
-        {location && (
-          <p className="flex items-center gap-1.5 text-sm text-slate-500">
-            <MapPinIcon className="h-4 w-4 shrink-0 text-brand-600" />
-            {location}
-          </p>
-        )}
-
         <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">
           Ver detalhes
           <ArrowRightIcon className="h-4 w-4" />

@@ -1,25 +1,81 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "@/services/api";
+import { makeAnimal } from "@/test/animals";
 import AnimalDetailsPage from "./page";
 
-describe("Página de detalhes do animal", () => {
-  it("exibe as informações principais do animal", async () => {
-    const page = await AnimalDetailsPage({ params: Promise.resolve({ id: "1" }) });
-    render(page);
+const navigationMocks = vi.hoisted(() => ({
+  id: "5f1c2e78-9b0a-4c31-8a1f-2d6e7b8c9a01",
+}));
 
-    expect(screen.getByRole("heading", { name: "Amber", level: 1 })).toBeInTheDocument();
+vi.mock("next/navigation", () => ({
+  useParams: () => ({ id: navigationMocks.id }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock("@/services/animals", () => ({ getAnimalById: vi.fn() }));
+
+import { getAnimalById } from "@/services/animals";
+
+const mockedGetAnimalById = vi.mocked(getAnimalById);
+const animal = makeAnimal();
+
+describe("Página de detalhes do animal", () => {
+  beforeEach(() => {
+    navigationMocks.id = animal.id;
+    mockedGetAnimalById.mockReset();
+    mockedGetAnimalById.mockResolvedValue(animal);
+  });
+
+  it("exibe os dados do animal retornados pela API", async () => {
+    render(<AnimalDetailsPage />);
+
+    expect(screen.getByText("Carregando animais...")).toBeInTheDocument();
+
+    expect(await screen.findByRole("heading", { name: "Amber", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("Disponível para adoção")).toBeInTheDocument();
-    expect(screen.getByText("Fêmea")).toBeInTheDocument();
-    expect(screen.getByText("1 ano")).toBeInTheDocument();
-    expect(screen.getByText("Médio")).toBeInTheDocument();
+    expect(screen.getByText("Femea")).toBeInTheDocument();
+    expect(screen.getByText("Medio")).toBeInTheDocument();
+    expect(screen.getByText("Maria Silva")).toBeInTheDocument();
+    expect(screen.getByText("31999999999")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Sobre Amber" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Quero adotar 🐾" })).toBeInTheDocument();
+    expect(mockedGetAnimalById).toHaveBeenCalledWith(animal.id);
   });
 
   it("linka de volta para a listagem", async () => {
-    const page = await AnimalDetailsPage({ params: Promise.resolve({ id: "1" }) });
-    render(page);
+    render(<AnimalDetailsPage />);
 
+    await screen.findByRole("heading", { name: "Amber", level: 1 });
     expect(screen.getByRole("link", { name: "Voltar" })).toHaveAttribute("href", "/animais");
+  });
+
+  it("exibe estado de não encontrado quando a API retorna 404", async () => {
+    mockedGetAnimalById.mockRejectedValue(new ApiError("Animal não encontrado.", 404));
+    render(<AnimalDetailsPage />);
+
+    expect(await screen.findByRole("heading", { name: "Animal não encontrado" })).toBeInTheDocument();
+  });
+
+  it("exibe erro de comunicação e permite tentar novamente", async () => {
+    const user = userEvent.setup();
+    mockedGetAnimalById
+      .mockRejectedValueOnce(new Error("fetch failed"))
+      .mockResolvedValueOnce(animal);
+    render(<AnimalDetailsPage />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Não foi possível carregar os detalhes do animal.",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("fetch failed")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+
+    expect(await screen.findByRole("heading", { name: "Amber", level: 1 })).toBeInTheDocument();
+    expect(mockedGetAnimalById).toHaveBeenCalledTimes(2);
   });
 });
