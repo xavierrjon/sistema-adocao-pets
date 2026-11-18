@@ -72,6 +72,8 @@ const animalExample = {
   size: "Medio",
   description: "Gatinha dócil e carinhosa que procura um novo lar.",
   status: "DISPONIVEL",
+  state: "SP",
+  city: "São Paulo",
   imageUrl: null,
   userId: "8c4b1d20-3e7a-4f52-9b6d-1a2c3d4e5f60",
   createdAt: "2026-11-17T12:00:00.000Z",
@@ -90,6 +92,8 @@ const createAnimalExample = {
   size: "Medio",
   description: "Gatinha dócil e carinhosa que procura um novo lar.",
   whatsapp: "31999999999",
+  state: "SP",
+  city: "São Paulo",
 };
 
 export const swaggerSpec = {
@@ -296,15 +300,16 @@ export const swaggerSpec = {
     "/animals": {
       get: {
         tags: ["Animais"],
-        summary: "Lista todos os animais",
+        summary: "Lista animais disponíveis para adoção",
         description:
-          "Retorna todos os animais cadastrados, ordenados do mais recente para o mais antigo, " +
-          "com os dados públicos do responsável. O WhatsApp do responsável nunca é incluído nesta resposta.",
+          "Retorna apenas os animais com status `DISPONIVEL`, ordenados do mais recente para o mais " +
+          "antigo, com os dados públicos do responsável. Animais `EM_PROCESSO` ou `ADOTADO` não " +
+          "aparecem nesta vitrine. O WhatsApp do responsável nunca é incluído nesta resposta.",
         operationId: "listAnimals",
         security: [],
         responses: {
           200: {
-            description: "Lista de animais (pode ser vazia).",
+            description: "Lista de animais disponíveis (pode ser vazia).",
             content: {
               "application/json": {
                 schema: {
@@ -325,6 +330,8 @@ export const swaggerSpec = {
           "Cria um animal para o usuário autenticado: o responsável é sempre o dono da sessão " +
           "(qualquer `userId` enviado pelo cliente é ignorado). O campo `status` é opcional e, " +
           "por padrão, o backend utiliza `DISPONIVEL`.\n\n" +
+          "`state` (UF) e `city` são obrigatórios no cadastro. A cidade é validada contra a API " +
+          "pública do IBGE e precisa pertencer ao estado informado.\n\n" +
           "Aceita `application/json` ou `multipart/form-data`. No multipart, os campos são " +
           "enviados como texto e a foto vai no campo `image` (opcional; JPEG, PNG ou WebP, até 5 MB).",
         operationId: "createAnimal",
@@ -352,9 +359,9 @@ export const swaggerSpec = {
               },
             },
           },
-          400: errorResponse("Dados inválidos.", {
+          400: errorResponse("Dados inválidos, status inválido ou localização incompatível.", {
             error: "Dados inválidos.",
-            details: [{ field: "name", message: "Nome é obrigatório." }],
+            details: [{ field: "city", message: 'A cidade "Santos" não pertence ao estado RJ.' }],
           }),
           413: errorResponse("Imagem muito grande.", {
             error: "A imagem deve ter no máximo 5 MB.",
@@ -362,8 +369,8 @@ export const swaggerSpec = {
           502: errorResponse("Falha no armazenamento de imagens.", {
             error: "Não foi possível salvar a imagem no serviço de armazenamento.",
           }),
-          503: errorResponse("Armazenamento não configurado.", {
-            error: "Serviço de imagens não configurado. Informe as credenciais do Cloudinary no ambiente.",
+          503: errorResponse("Serviço externo indisponível (armazenamento de imagens ou IBGE).", {
+            error: "Não foi possível validar a localização com a API do IBGE. Tente novamente em instantes.",
           }),
           401: unauthorizedNoCookieResponse,
           403: forbiddenOriginResponse,
@@ -429,7 +436,13 @@ export const swaggerSpec = {
         summary: "Atualiza um animal",
         description:
           "Atualiza parcialmente um animal. É obrigatório informar ao menos um campo. " +
-          "Somente o responsável pelo animal pode atualizá-lo.\n\n" +
+          "Somente o responsável pelo animal pode atualizar seus dados, o status de adoção e a " +
+          "localização; demais usuários recebem `403`.\n\n" +
+          "O status aceita `DISPONIVEL`, `EM_PROCESSO` e `ADOTADO`. Novos anúncios começam como " +
+          "`DISPONIVEL`, e animais em processo ou adotados devem ser exibidos como tal pelas interfaces.\n\n" +
+          "Ao informar a localização, `state` e `city` devem vir juntos e a cidade é validada " +
+          "contra a API do IBGE. Edições que não alteram a localização (por exemplo, só `status`) " +
+          "não exigem esses campos, preservando anúncios antigos.\n\n" +
           "Aceita `application/json` ou `multipart/form-data`. No multipart, uma nova foto vai " +
           "no campo `image` (JPEG, PNG ou WebP, até 5 MB) e substitui a atual; para remover a " +
           "foto sem substituir, envie `removeImage=true`.",
@@ -459,7 +472,7 @@ export const swaggerSpec = {
               },
             },
           },
-          400: errorResponse("Dados inválidos ou nenhum campo informado.", {
+          400: errorResponse("Dados inválidos, nenhum campo informado ou localização incompatível.", {
             error: "Dados inválidos.",
             details: [{ field: "", message: "Informe ao menos um campo para atualização." }],
           }),
@@ -469,8 +482,8 @@ export const swaggerSpec = {
           502: errorResponse("Falha no armazenamento de imagens.", {
             error: "Não foi possível salvar a imagem no serviço de armazenamento.",
           }),
-          503: errorResponse("Armazenamento não configurado.", {
-            error: "Serviço de imagens não configurado. Informe as credenciais do Cloudinary no ambiente.",
+          503: errorResponse("Serviço externo indisponível (armazenamento de imagens ou IBGE).", {
+            error: "Não foi possível validar a localização com a API do IBGE. Tente novamente em instantes.",
           }),
           401: unauthorizedResponse,
           403: forbiddenResponse,
@@ -631,8 +644,16 @@ export const swaggerSpec = {
       AnimalStatus: {
         type: "string",
         enum: ["DISPONIVEL", "EM_PROCESSO", "ADOTADO"],
-        description: "Situação do animal no processo de adoção.",
+        description:
+          "Situação do animal no processo de adoção. `DISPONIVEL` é o padrão de novos anúncios; " +
+          "`EM_PROCESSO` e `ADOTADO` indicam que o animal não está mais disponível.",
         example: "DISPONIVEL",
+      },
+      AnimalState: {
+        type: "string",
+        pattern: "^[A-Z]{2}$",
+        description: "Sigla da UF (estado) conforme as localidades do IBGE.",
+        example: "SP",
       },
       AnimalSpecies: {
         type: "string",
@@ -676,6 +697,17 @@ export const swaggerSpec = {
           size: { $ref: "#/components/schemas/AnimalSize" },
           description: { type: "string" },
           status: { $ref: "#/components/schemas/AnimalStatus" },
+          state: {
+            allOf: [{ $ref: "#/components/schemas/AnimalState" }],
+            nullable: true,
+            description: "UF onde o animal se encontra. `null` em anúncios anteriores à localização.",
+          },
+          city: {
+            type: "string",
+            nullable: true,
+            description: "Município onde o animal se encontra. `null` em anúncios anteriores à localização.",
+            example: "São Paulo",
+          },
           imageUrl: {
             type: "string",
             format: "uri",
@@ -700,6 +732,8 @@ export const swaggerSpec = {
           "size",
           "description",
           "status",
+          "state",
+          "city",
           "userId",
           "createdAt",
           "updatedAt",
@@ -735,13 +769,34 @@ export const swaggerSpec = {
             example: "31999999999",
           },
           status: { $ref: "#/components/schemas/AnimalStatus" },
+          state: { $ref: "#/components/schemas/AnimalState" },
+          city: {
+            type: "string",
+            minLength: 1,
+            maxLength: 120,
+            description: "Município do IBGE pertencente à UF informada.",
+            example: "São Paulo",
+          },
         },
-        required: ["name", "species", "breed", "sex", "size", "description", "whatsapp"],
+        required: [
+          "name",
+          "species",
+          "breed",
+          "sex",
+          "size",
+          "description",
+          "whatsapp",
+          "state",
+          "city",
+        ],
       },
       UpdateAnimalInput: {
         type: "object",
         minProperties: 1,
-        description: "Todos os campos são opcionais, mas ao menos um deve ser informado.",
+        description:
+          "Todos os campos são opcionais, mas ao menos um deve ser informado. " +
+          "`state` e `city` devem ser enviados juntos e validados pelo IBGE. " +
+          "Para alterar apenas o status, envie somente `status`.",
         properties: {
           name: { type: "string", minLength: 1, example: "Amber" },
           species: { $ref: "#/components/schemas/AnimalSpecies" },
@@ -751,6 +806,8 @@ export const swaggerSpec = {
           description: { type: "string", minLength: 1, example: "Gatinha dócil e carinhosa." },
           whatsapp: { type: "string", pattern: "^\\d{10,11}$", example: "31999999999" },
           status: { $ref: "#/components/schemas/AnimalStatus" },
+          state: { $ref: "#/components/schemas/AnimalState" },
+          city: { type: "string", minLength: 1, maxLength: 120, example: "São Paulo" },
         },
         example: { status: "ADOTADO" },
       },

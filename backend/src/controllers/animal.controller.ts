@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUser } from "../middlewares/auth.middleware";
 import * as animalService from "../services/animal.service";
+import * as locationService from "../services/location.service";
 import * as storageService from "../services/storage.service";
 import {
   animalParamsSchema,
@@ -33,6 +34,9 @@ export async function getContact(request: Request, response: Response) {
 export async function createAnimal(request: Request, response: Response) {
   const data = createAnimalSchema.parse(request.body);
 
+  // Valida a localização antes de qualquer efeito externo (upload de imagem).
+  await locationService.assertValidLocation(data.state, data.city);
+
   // O upload ocorre antes da criação do registro; se o banco falhar depois,
   // o arquivo recém-enviado é descartado para não deixar órfãos.
   const uploadedImage = request.file
@@ -58,6 +62,13 @@ export async function updateAnimal(request: Request, response: Response) {
   // A propriedade é verificada antes do upload: terceiros não devem
   // conseguir disparar envios para o armazenamento.
   await animalService.assertAnimalOwnership(id, userId, "editar");
+
+  // Edições parciais (por exemplo, apenas status) não precisam revalidar a
+  // localização já persistida; anúncios antigos sem localização continuam
+  // funcionando normalmente.
+  if (data.state && data.city) {
+    await locationService.assertValidLocation(data.state, data.city);
+  }
 
   const uploadedImage = request.file
     ? await storageService.uploadAnimalImage({ buffer: request.file.buffer, size: request.file.size })

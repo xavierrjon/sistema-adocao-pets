@@ -12,6 +12,8 @@ type AnimalRecord = {
   size: string;
   description: string;
   status: string;
+  state: string | null;
+  city: string | null;
   whatsapp: string;
   imageUrl: string | null;
   imagePublicId: string | null;
@@ -38,6 +40,8 @@ function toPublicAnimal(animal: AnimalRecord) {
     size: animal.size,
     description: animal.description,
     status: animal.status,
+    state: animal.state ?? null,
+    city: animal.city ?? null,
     imageUrl: animal.imageUrl ?? null,
     userId: animal.userId,
     createdAt: animal.createdAt,
@@ -61,7 +65,9 @@ async function getAnimalRecord(id: string): Promise<AnimalRecord> {
 }
 
 export async function listAnimals() {
+  // A vitrine pública mostra apenas animais que ainda procuram uma família.
   const animals = await prisma.animal.findMany({
+    where: { status: "DISPONIVEL" },
     include: { user: { select: publicUserSelect } },
     orderBy: { createdAt: "desc" },
   });
