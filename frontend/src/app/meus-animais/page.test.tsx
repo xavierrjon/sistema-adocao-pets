@@ -38,12 +38,14 @@ vi.mock("@/contexts/AuthContext", () => ({
 vi.mock("@/services/animals", () => ({
   listMyAnimals: vi.fn(),
   deleteAnimal: vi.fn(),
+  updateAnimal: vi.fn(),
 }));
 
-import { deleteAnimal, listMyAnimals } from "@/services/animals";
+import { deleteAnimal, listMyAnimals, updateAnimal } from "@/services/animals";
 
 const mockedListMyAnimals = vi.mocked(listMyAnimals);
 const mockedDeleteAnimal = vi.mocked(deleteAnimal);
+const mockedUpdateAnimal = vi.mocked(updateAnimal);
 
 const animals = [
   makeAnimal({ id: "11111111-1111-4111-8111-111111111111", name: "Amber" }),
@@ -64,6 +66,11 @@ beforeEach(() => {
   authMocks.state.isLoading = false;
   mockedDeleteAnimal.mockReset();
   mockedDeleteAnimal.mockResolvedValue(undefined);
+  mockedUpdateAnimal.mockReset();
+  mockedUpdateAnimal.mockImplementation(async (id, data) => {
+    const current = animals.find((animal) => animal.id === id) ?? animals[0];
+    return { ...current, ...data } as Awaited<ReturnType<typeof updateAnimal>>;
+  });
   mockedListMyAnimals.mockReset();
   mockedListMyAnimals.mockResolvedValue(animals);
 });
@@ -82,7 +89,8 @@ describe("Página Meus animais", () => {
 
     expect(await screen.findByText("Amber")).toBeInTheDocument();
     expect(screen.getByText("Toby")).toBeInTheDocument();
-    expect(screen.getByText("Em processo")).toBeInTheDocument();
+    const tobyCard = screen.getByRole("heading", { name: "Toby" }).closest("li")!;
+    expect(within(tobyCard).getAllByText("Em processo").length).toBeGreaterThan(0);
 
     expect(
       screen.getByRole("link", { name: "Editar anúncio de Amber" }),
@@ -241,6 +249,74 @@ describe("Página Meus animais", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("abre a confirmação ao alterar o status e permite cancelar", async () => {
+    const user = userEvent.setup();
+    render(<MyAnimalsPage />);
+
+    await screen.findByText("Amber");
+    const amberCard = screen.getByRole("heading", { name: "Amber" }).closest("li")!;
+    await user.selectOptions(within(amberCard).getByLabelText("Status do anúncio"), "ADOTADO");
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Alterar status do anúncio")).toBeInTheDocument();
+    expect(within(dialog).getByText(/Tem certeza que deseja alterar o status de/)).toBeInTheDocument();
+    expect(within(dialog).getByText("Amber")).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Marcar como adotado" }),
+    ).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(mockedUpdateAnimal).not.toHaveBeenCalled();
+  });
+
+  it("persiste o status confirmado e atualiza o anúncio na listagem", async () => {
+    const user = userEvent.setup();
+    render(<MyAnimalsPage />);
+
+    await screen.findByText("Amber");
+    const amberCard = screen.getByRole("heading", { name: "Amber" }).closest("li")!;
+    await user.selectOptions(within(amberCard).getByLabelText("Status do anúncio"), "ADOTADO");
+
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Marcar como adotado" }));
+
+    await waitFor(() => {
+      expect(mockedUpdateAnimal).toHaveBeenCalledWith(animals[0].id, { status: "ADOTADO" });
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    expect(within(amberCard).getByLabelText("Status do anúncio")).toHaveValue("ADOTADO");
+    expect(screen.getByText("Status de Amber alterado para Adotado.")).toBeInTheDocument();
+    expect(mockedUpdateAnimal).toHaveBeenCalledTimes(1);
+  });
+
+  it("exibe erro no diálogo quando a alteração de status falha", async () => {
+    mockedUpdateAnimal.mockRejectedValueOnce(
+      new ApiError("Você não tem permissão para editar este animal.", 403),
+    );
+
+    const user = userEvent.setup();
+    render(<MyAnimalsPage />);
+
+    await screen.findByText("Amber");
+    const amberCard = screen.getByRole("heading", { name: "Amber" }).closest("li")!;
+    await user.selectOptions(within(amberCard).getByLabelText("Status do anúncio"), "EM_PROCESSO");
+
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Alterar status" }));
+
+    expect(
+      await within(dialog).findByText("Você não tem permissão para editar este animal."),
+    ).toBeInTheDocument();
+    expect(within(amberCard).getByLabelText("Status do anúncio")).toHaveValue("DISPONIVEL");
   });
 
   it("redireciona para o login quando o visitante não está autenticado", () => {

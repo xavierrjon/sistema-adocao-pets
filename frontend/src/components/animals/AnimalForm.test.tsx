@@ -1,9 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
 import { makeAnimal } from "@/test/animals";
 import { AnimalForm } from "./AnimalForm";
+
+const locationMocks = vi.hoisted(() => ({
+  getStates: vi.fn(),
+  getCities: vi.fn(),
+}));
+
+vi.mock("@/services/location", () => ({
+  getStates: locationMocks.getStates,
+  getCities: locationMocks.getCities,
+}));
 
 const animal = makeAnimal();
 
@@ -22,6 +32,16 @@ beforeAll(() => {
     configurable: true,
     writable: true,
   });
+});
+
+beforeEach(() => {
+  locationMocks.getStates.mockReset();
+  locationMocks.getCities.mockReset();
+  locationMocks.getStates.mockResolvedValue([
+    { sigla: "SP", nome: "São Paulo" },
+    { sigla: "RJ", nome: "Rio de Janeiro" },
+  ]);
+  locationMocks.getCities.mockResolvedValue(["Campinas", "São Paulo"]);
 });
 
 function renderCreateForm(onSubmit = vi.fn().mockResolvedValue(undefined)) {
@@ -58,6 +78,15 @@ async function fillCreateForm(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByLabelText(/^Porte/), "Medio");
   await user.type(screen.getByLabelText(/^Descrição/), "Gatinha dócil que procura um lar.");
   await user.type(screen.getByLabelText(/^WhatsApp/), "11999999999");
+
+  await screen.findByRole("option", { name: "São Paulo (SP)" });
+  await user.selectOptions(screen.getByLabelText(/^Estado/), "SP");
+  const citySelect = await waitFor(() => {
+    const select = screen.getByLabelText(/^Cidade/);
+    expect(select).toBeEnabled();
+    return select;
+  });
+  await user.selectOptions(citySelect, "São Paulo");
 }
 
 describe("AnimalForm", () => {
@@ -77,6 +106,8 @@ describe("AnimalForm", () => {
     expect(screen.getByText("Selecione o sexo.")).toBeInTheDocument();
     expect(screen.getByText("Selecione o porte.")).toBeInTheDocument();
     expect(screen.getByText("Escreva uma descrição sobre o animal.")).toBeInTheDocument();
+    expect(screen.getByText("Selecione o estado.")).toBeInTheDocument();
+    expect(screen.getByText("Selecione a cidade.")).toBeInTheDocument();
     expect(screen.getByText("Informe o WhatsApp para contato.")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
@@ -108,6 +139,8 @@ describe("AnimalForm", () => {
         sex: "Femea",
         size: "Medio",
         description: "Gatinha dócil que procura um lar.",
+        state: "SP",
+        city: "São Paulo",
         whatsapp: "11999999999",
       },
       expect.objectContaining({ file: null, removeImage: false }),
@@ -123,6 +156,8 @@ describe("AnimalForm", () => {
     expect(screen.getByLabelText(/^Sexo/)).toHaveValue("Femea");
     expect(screen.getByLabelText(/^Porte/)).toHaveValue("Medio");
     expect(screen.getByLabelText(/^Descrição/)).toHaveValue(animal.description);
+    expect(screen.getByLabelText(/^Estado/)).toHaveValue("SP");
+    expect(screen.getByLabelText(/^Cidade/)).toHaveValue("São Paulo");
     // O WhatsApp salvo não é retornado pela API, por isso começa em branco.
     expect(screen.getByLabelText(/^WhatsApp/)).toHaveValue("");
   });
@@ -213,6 +248,52 @@ describe("AnimalForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Cadastrar animal" }));
     expect(onSubmit).toHaveBeenCalledTimes(2);
+  });
+
+  it("carrega estados e cidades a partir do IBGE", async () => {
+    const user = userEvent.setup();
+    renderCreateForm();
+
+    expect(await screen.findByRole("option", { name: "São Paulo (SP)" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(/^Estado/), "SP");
+
+    await waitFor(() => {
+      expect(locationMocks.getCities).toHaveBeenCalledWith("SP", expect.anything());
+    });
+    expect(await screen.findByRole("option", { name: "Campinas" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Cidade/)).toBeEnabled();
+  });
+
+  it("limpa a cidade quando o estado selecionado muda", async () => {
+    const user = userEvent.setup();
+    renderCreateForm();
+    await fillCreateForm(user);
+
+    expect(screen.getByLabelText(/^Cidade/)).toHaveValue("São Paulo");
+
+    await user.selectOptions(screen.getByLabelText(/^Estado/), "RJ");
+
+    await waitFor(() => {
+      expect(locationMocks.getCities).toHaveBeenCalledWith("RJ", expect.anything());
+    });
+    expect(screen.getByLabelText(/^Cidade/)).toHaveValue("");
+  });
+
+  it("exibe erro do IBGE e permite tentar novamente sem recarregar a página", async () => {
+    locationMocks.getStates.mockRejectedValueOnce(new Error("offline"));
+    const user = userEvent.setup();
+    renderCreateForm();
+
+    expect(
+      (await screen.findAllByText("Não foi possível carregar os estados. Verifique sua conexão e tente novamente."))
+        .length,
+    ).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+
+    expect(await screen.findByRole("option", { name: "São Paulo (SP)" })).toBeInTheDocument();
+    expect(locationMocks.getStates).toHaveBeenCalledTimes(2);
   });
 });
 

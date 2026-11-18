@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { AnimalStatus } from "@/types/animal";
 
 const ANIMAL_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -42,8 +43,8 @@ vi.mock("@/services/animals", () => ({
 
 import { AdoptionContact } from "./AdoptionContact";
 
-function renderContact() {
-  return render(<AdoptionContact animalId={ANIMAL_ID} animalName="Amber" />);
+function renderContact(status: AnimalStatus = "DISPONIVEL") {
+  return render(<AdoptionContact animalId={ANIMAL_ID} animalName="Amber" status={status} />);
 }
 
 describe("AdoptionContact", () => {
@@ -124,5 +125,17 @@ describe("AdoptionContact", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Não foi possível carregar o contato do responsável.",
     );
+  });
+
+  it("não oferece adoção para animal adotado ou em processo", () => {
+    renderContact("ADOTADO");
+
+    expect(screen.queryByRole("button", { name: "Quero adotar 🐾" })).not.toBeInTheDocument();
+    expect(screen.getByText("Adotado")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver animais disponíveis" })).toHaveAttribute(
+      "href",
+      "/animais",
+    );
+    expect(apiMocks.getAnimalContact).not.toHaveBeenCalled();
   });
 });

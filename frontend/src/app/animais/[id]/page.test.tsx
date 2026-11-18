@@ -60,6 +60,7 @@ describe("Página de detalhes do animal", () => {
     expect(screen.getByText("Femea")).toBeInTheDocument();
     expect(screen.getByText("Medio")).toBeInTheDocument();
     expect(screen.getByText("Maria Silva")).toBeInTheDocument();
+    expect(screen.getByText("São Paulo - SP")).toBeInTheDocument();
     expect(screen.queryByText("31999999999")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Sobre Amber" })).toBeInTheDocument();
     expect(mockedGetAnimalById).toHaveBeenCalledWith(animal.id);
