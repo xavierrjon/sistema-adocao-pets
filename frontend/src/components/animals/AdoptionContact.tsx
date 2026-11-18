@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
+import { getAnimalStatusLabel } from "@/lib/animal-status";
 import { withNext } from "@/lib/redirect";
 import { getAnimalContact } from "@/services/animals";
-import type { AnimalContact } from "@/types/animal";
+import type { AnimalContact, AnimalStatus } from "@/types/animal";
 
 function formatWhatsapp(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -23,7 +24,13 @@ function formatWhatsapp(value: string) {
   return value;
 }
 
-export function AdoptionContact({ animalId, animalName }: { animalId: string; animalName: string }) {
+type AdoptionContactProps = {
+  animalId: string;
+  animalName: string;
+  status: AnimalStatus;
+};
+
+export function AdoptionContact({ animalId, animalName, status }: AdoptionContactProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [contact, setContact] = useState<AnimalContact | null>(null);
@@ -57,6 +64,23 @@ export function AdoptionContact({ animalId, animalName }: { animalId: string; an
 
   const whatsappDigits = contact?.whatsapp.replace(/\D/g, "") ?? "";
   const message = encodeURIComponent(`Olá! Tenho interesse em adotar ${animalName}.`);
+
+  // Nunca expõe o botão de adoção para animais que não estão disponíveis.
+  if (status !== "DISPONIVEL") {
+    return (
+      <div className="max-w-xl rounded-2xl bg-slate-50 px-4 py-3" role="status">
+        <p className="text-sm font-bold text-brand-950">
+          {getAnimalStatusLabel(status, true)}
+        </p>
+        <p className="mt-1 text-sm text-slate-600">
+          Este anúncio não está aberto para novas adoções. Veja outros animais disponíveis na vitrine.
+        </p>
+        <Link href="/animais" className={buttonClasses({ variant: "outline", size: "sm", className: "mt-3" })}>
+          Ver animais disponíveis
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

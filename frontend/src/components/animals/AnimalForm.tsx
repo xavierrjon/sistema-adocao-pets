@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { AnimalImageField } from "./AnimalImageField";
 import { detailsToFieldErrors } from "@/lib/form-errors";
 import { ApiError } from "@/services/api";
+import { getCities, getStates, type IbgeState } from "@/services/location";
 import type { Animal } from "@/types/animal";
 
 /** Opções alinhadas aos enums aceitos pelo backend (schemas de animals). */
@@ -22,6 +23,10 @@ const DESCRIPTION_MAX_LENGTH = 1000;
 const IMAGE_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
+function isAbortError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "name" in error && error.name === "AbortError";
+}
+
 /**
  * Dados normalizados enviados pelo formulário.
  * O WhatsApp é opcional porque a API não devolve o contato salvo (medida de
@@ -34,6 +39,8 @@ export type AnimalFormPayload = {
   sex: string;
   size: string;
   description: string;
+  state: string;
+  city: string;
   whatsapp?: string;
 };
 
@@ -51,6 +58,8 @@ type AnimalFormValues = {
   sex: string;
   size: string;
   description: string;
+  state: string;
+  city: string;
   whatsapp: string;
 };
 
@@ -71,6 +80,8 @@ const EMPTY_VALUES: AnimalFormValues = {
   sex: "",
   size: "",
   description: "",
+  state: "",
+  city: "",
   whatsapp: "",
 };
 
@@ -83,6 +94,8 @@ function valuesFromAnimal(animal: Animal): AnimalFormValues {
     sex: animal.sex,
     size: animal.size,
     description: animal.description,
+    state: animal.state ?? "",
+    city: animal.city ?? "",
     whatsapp: "",
   };
 }
@@ -96,6 +109,16 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Localização carregada do IBGE. `locationRetry` permite tentar novamente
+  // sem recarregar a página quando a API pública falha.
+  const [states, setStates] = useState<IbgeState[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [isLoadingStates, setIsLoadingStates] = useState(true);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [statesError, setStatesError] = useState<string | null>(null);
+  const [citiesError, setCitiesError] = useState<string | null>(null);
+  const [locationRetry, setLocationRetry] = useState(0);
 
   // Estado da imagem: arquivo novo, prévia e remoção da foto atual (edição).
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,8 +135,82 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
     };
   }, [previewUrl]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    setIsLoadingStates(true);
+    setStatesError(null);
+
+    getStates(controller.signal)
+      .then((data) => {
+        if (active) setStates(data);
+      })
+      .catch((error: unknown) => {
+        if (active && !isAbortError(error)) {
+          setStatesError("Não foi possível carregar os estados. Verifique sua conexão e tente novamente.");
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingStates(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [locationRetry]);
+
+  useEffect(() => {
+    const state = values.state;
+
+    if (!state) {
+      setCities([]);
+      setCitiesError(null);
+      setIsLoadingCities(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    let active = true;
+
+    setCities([]);
+    setCitiesError(null);
+    setIsLoadingCities(true);
+
+    getCities(state, controller.signal)
+      .then((data) => {
+        if (active) setCities(data);
+      })
+      .catch((error: unknown) => {
+        if (active && !isAbortError(error)) {
+          setCitiesError("Não foi possível carregar as cidades deste estado. Tente novamente.");
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingCities(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [values.state, locationRetry]);
+
   function setValue<K extends keyof AnimalFormValues>(key: K, value: AnimalFormValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }));
+  }
+
+  function handleStateChange(event: ChangeEvent<HTMLSelectElement>) {
+    const state = event.target.value;
+    setValues((previous) => ({ ...previous, state, city: "" }));
+    // A cidade selecionada deixou de ser válida para a nova UF.
+    setFieldErrors((previous) => ({ ...previous, state: undefined, city: undefined }));
+  }
+
+  function handleCityChange(event: ChangeEvent<HTMLSelectElement>) {
+    setValue("city", event.target.value);
+    setFieldErrors((previous) => ({ ...previous, city: undefined }));
   }
 
   function clearSelectedImage() {
@@ -182,6 +279,14 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
       errors.description = "Escreva uma descrição sobre o animal.";
     }
 
+    if (!values.state) {
+      errors.state = "Selecione o estado.";
+    }
+
+    if (!values.city) {
+      errors.city = "Selecione a cidade.";
+    }
+
     const whatsapp = values.whatsapp.replace(/\D/g, "");
 
     if (!whatsapp && !isEditing) {
@@ -213,6 +318,8 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
           sex: values.sex,
           size: values.size,
           description: values.description.trim(),
+          state: values.state,
+          city: values.city,
           ...(whatsapp ? { whatsapp } : {}),
         },
         {
@@ -235,6 +342,30 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
       setIsSubmitting(false);
     }
   }
+
+  // Mantém o valor atual visível mesmo se a lista do IBGE ainda não carregou
+  // (edição) ou se a consulta falhou — evita perder a seleção existente.
+  const stateOptions = [
+    ...(values.state && !states.some((item) => item.sigla === values.state)
+      ? [{ value: values.state, label: values.state }]
+      : []),
+    ...states.map((item) => ({ value: item.sigla, label: `${item.nome} (${item.sigla})` })),
+  ];
+  const cityOptions = values.city && !cities.includes(values.city) ? [values.city, ...cities] : cities;
+
+  const stateHint = isLoadingStates
+    ? "Carregando estados..."
+    : states.length === 0 && !statesError
+      ? "Nenhum estado disponível no momento."
+      : undefined;
+  const cityHint = !values.state
+    ? "Selecione um estado primeiro."
+    : isLoadingCities
+      ? "Carregando cidades..."
+      : cities.length === 0 && !citiesError
+        ? "Nenhuma cidade disponível para este estado."
+        : undefined;
+  const locationHasError = Boolean(statesError || citiesError);
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -317,6 +448,61 @@ export function AnimalForm({ initialAnimal, submitLabel, submittingLabel, onSubm
           onChange={(event) => setValue("description", event.target.value)}
           error={fieldErrors.description}
         />
+      </section>
+
+      <section className="space-y-5 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+        <div>
+          <h2 className="text-lg font-extrabold text-brand-950">Localização</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Informe onde o animal está. Estados e cidades vêm da lista oficial do IBGE.
+          </p>
+        </div>
+
+        {locationHasError ? (
+          <div className="rounded-2xl bg-red-50 px-4 py-3">
+            {/* O erro específico já é anunciado junto ao campo; aqui apenas
+                concentramos a mensagem e a ação de tentar novamente. */}
+            <p role="status" className="text-sm font-semibold text-red-700">
+              {statesError ?? citiesError}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => setLocationRetry((attempt) => attempt + 1)}
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        ) : null}
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <SelectField
+            id="animal-state"
+            label="Estado (UF)"
+            placeholder={isLoadingStates ? "Carregando estados..." : "Selecione o estado"}
+            options={stateOptions}
+            value={values.state}
+            onChange={handleStateChange}
+            hint={stateHint}
+            error={fieldErrors.state ?? statesError ?? undefined}
+            aria-busy={isLoadingStates}
+          />
+
+          <SelectField
+            id="animal-city"
+            label="Cidade"
+            placeholder={isLoadingCities ? "Carregando cidades..." : "Selecione a cidade"}
+            options={cityOptions}
+            value={values.city}
+            onChange={handleCityChange}
+            hint={cityHint}
+            error={fieldErrors.city ?? citiesError ?? undefined}
+            disabled={!values.state || isLoadingCities || Boolean(statesError)}
+            aria-busy={isLoadingCities}
+          />
+        </div>
       </section>
 
       <section className="space-y-5 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
@@ -444,11 +630,13 @@ function TextField({ id, label, error, hint, className, ...props }: TextFieldPro
   );
 }
 
+type SelectOption = { value: string; label: string };
+
 type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "id" | "aria-describedby" | "children"> & {
   id: string;
   label: string;
   placeholder: string;
-  options: readonly string[];
+  options: readonly (string | SelectOption)[];
   error?: string;
   hint?: string;
 };
@@ -480,11 +668,15 @@ function SelectField({ id, label, placeholder, options, error, hint, className, 
         <option value="" disabled>
           {placeholder}
         </option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+        {options.map((option) => {
+          const optionValue = typeof option === "string" ? option : option.value;
+          const optionLabel = typeof option === "string" ? option : option.label;
+          return (
+            <option key={optionValue} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
     </FieldWrapper>
   );

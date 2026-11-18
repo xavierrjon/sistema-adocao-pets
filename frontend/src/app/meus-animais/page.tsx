@@ -6,11 +6,13 @@ import { useSearchParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DeleteAnimalDialog } from "@/components/animals/DeleteAnimalDialog";
 import { MyAnimalCard } from "@/components/animals/MyAnimalCard";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PawIcon } from "@/components/ui/icons";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { getAnimalStatusLabel } from "@/lib/animal-status";
 import { isApiErrorWithStatus } from "@/lib/form-errors";
-import { deleteAnimal, listMyAnimals } from "@/services/animals";
-import type { Animal } from "@/types/animal";
+import { deleteAnimal, listMyAnimals, updateAnimal } from "@/services/animals";
+import type { Animal, AnimalStatus } from "@/types/animal";
 
 const FEEDBACK_MESSAGES = {
   cadastrado: "Animal cadastrado com sucesso.",
@@ -35,6 +37,12 @@ function MyAnimalsContent() {
   const [animalToDelete, setAnimalToDelete] = useState<Animal | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  type StatusTarget = { animal: Animal; nextStatus: AnimalStatus };
+  const [statusTarget, setStatusTarget] = useState<StatusTarget | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadAnimals = useCallback(() => {
@@ -86,6 +94,51 @@ function MyAnimalsContent() {
       }
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  function openStatusDialog(animal: Animal, nextStatus: AnimalStatus) {
+    if (nextStatus === animal.status) return;
+
+    setStatusTarget({ animal, nextStatus });
+    setStatusError(null);
+  }
+
+  function closeStatusDialog() {
+    // Não fecha enquanto a atualização está em andamento.
+    if (updatingStatusId) return;
+
+    setStatusTarget(null);
+    setStatusError(null);
+  }
+
+  async function handleStatusConfirm() {
+    if (!statusTarget || updatingStatusId) return;
+
+    const { animal, nextStatus } = statusTarget;
+
+    setStatusError(null);
+    setUpdatingStatusId(animal.id);
+
+    try {
+      const updated = await updateAnimal(animal.id, { status: nextStatus });
+      setAnimals((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setStatusTarget(null);
+      setSuccessMessage(
+        `Status de ${animal.name} alterado para ${getAnimalStatusLabel(nextStatus, true)}.`,
+      );
+    } catch (error) {
+      if (isApiErrorWithStatus(error, 401)) {
+        setStatusError("Sua sessão expirou. Faça login novamente para alterar o status.");
+      } else {
+        setStatusError(
+          error instanceof Error && error.message
+            ? error.message
+            : "Não foi possível alterar o status. Tente novamente.",
+        );
+      }
+    } finally {
+      setUpdatingStatusId(null);
     }
   }
 
@@ -147,7 +200,14 @@ function MyAnimalsContent() {
         ) : (
           <ul className="space-y-3">
             {animals.map((animal) => (
-              <MyAnimalCard key={animal.id} animal={animal} onOpenDelete={openDeleteDialog} />
+              <MyAnimalCard
+                key={animal.id}
+                animal={animal}
+                isUpdatingStatus={updatingStatusId === animal.id}
+                statusError={statusTarget?.animal.id === animal.id ? statusError : null}
+                onOpenDelete={openDeleteDialog}
+                onStatusChange={openStatusDialog}
+              />
             ))}
           </ul>
         )}
@@ -160,6 +220,35 @@ function MyAnimalsContent() {
           error={deleteError}
           onConfirm={handleDeleteConfirm}
           onCancel={closeDeleteDialog}
+        />
+      ) : null}
+
+      {statusTarget ? (
+        <ConfirmDialog
+          title="Alterar status do anúncio"
+          description={
+            <div className="space-y-2">
+              <p>
+                Tem certeza que deseja alterar o status de{" "}
+                <span className="font-bold">{statusTarget.animal.name}</span> de{" "}
+                <span className="font-bold">
+                  {getAnimalStatusLabel(statusTarget.animal.status)}
+                </span>{" "}
+                para <span className="font-bold">{getAnimalStatusLabel(statusTarget.nextStatus)}</span>?
+              </p>
+              <p className="text-xs text-slate-500">
+                {statusTarget.nextStatus === "ADOTADO"
+                  ? "Ao marcar como adotado, o anúncio deixa de ser exibido como disponível para adoção."
+                  : "O novo status será salvo neste anúncio, sem recriá-lo."}
+              </p>
+            </div>
+          }
+          confirmLabel={statusTarget.nextStatus === "ADOTADO" ? "Marcar como adotado" : "Alterar status"}
+          pendingLabel="Salvando..."
+          isPending={Boolean(updatingStatusId)}
+          error={statusError}
+          onConfirm={handleStatusConfirm}
+          onCancel={closeStatusDialog}
         />
       ) : null}
     </div>

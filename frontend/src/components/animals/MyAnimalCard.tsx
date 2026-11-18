@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/Button";
+import { formatAnimalLocation } from "@/lib/animal-location";
+import type { Animal, AnimalStatus } from "@/types/animal";
 import { AnimalStatusBadge } from "./AnimalStatusBadge";
-import type { Animal } from "@/types/animal";
+import { AnimalStatusControl } from "./AnimalStatusControl";
 
 /** Formata a data de cadastro sem depender do fuso/local do navegador. */
 function formatDate(isoDate: string): string {
@@ -15,10 +17,21 @@ function formatDate(isoDate: string): string {
 
 type MyAnimalCardProps = {
   animal: Animal;
+  isUpdatingStatus: boolean;
+  statusError?: string | null;
   onOpenDelete: (animal: Animal) => void;
+  onStatusChange: (animal: Animal, status: AnimalStatus) => void;
 };
 
-export function MyAnimalCard({ animal, onOpenDelete }: MyAnimalCardProps) {
+export function MyAnimalCard({
+  animal,
+  isUpdatingStatus,
+  statusError,
+  onOpenDelete,
+  onStatusChange,
+}: MyAnimalCardProps) {
+  const location = formatAnimalLocation(animal.city, animal.state);
+
   return (
     <li className="rounded-2xl bg-white px-5 py-4 shadow-sm ring-1 ring-slate-100">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -49,13 +62,26 @@ export function MyAnimalCard({ animal, onOpenDelete }: MyAnimalCardProps) {
               {animal.breed ? ` · ${animal.breed}` : ""}
               {` · ${animal.sex} · ${animal.size}`}
             </p>
+            {location ? (
+              <p className="mt-1 text-xs font-semibold text-slate-500">Localização: {location}</p>
+            ) : null}
             {formatDate(animal.createdAt) ? (
               <p className="mt-1 text-xs text-slate-400">Cadastrado em {formatDate(animal.createdAt)}</p>
             ) : null}
           </div>
         </div>
 
-        <AnimalStatusBadge status={animal.status} />
+        <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
+          <AnimalStatusBadge status={animal.status} />
+          <div className="w-full sm:w-56">
+            <AnimalStatusControl
+              status={animal.status}
+              isUpdating={isUpdatingStatus}
+              error={statusError}
+              onRequestChange={(status) => onStatusChange(animal, status)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
