@@ -17,6 +17,7 @@ describe("AnimalCard", () => {
 
     expect(screen.getByText("Amber")).toBeInTheDocument();
     expect(screen.getByText("Gato · SRD")).toBeInTheDocument();
+    expect(screen.getByText("São Paulo - SP")).toBeInTheDocument();
     expect(screen.getByText("Disponível")).toBeInTheDocument();
   });
 

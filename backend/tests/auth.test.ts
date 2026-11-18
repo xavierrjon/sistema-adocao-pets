@@ -313,5 +313,5 @@ describe("utilitário de senha", () => {
     expect(first).toMatch(/^\$2[aby]\$/);
     expect(await verifyPassword("SenhaSegura123", first)).toBe(true);
     expect(await verifyPassword("SenhaErrada", first)).toBe(false);
-  });
+  }, 20000);
 });

@@ -1,15 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRightIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, MapPinIcon } from "@/components/ui/icons";
+import { formatAnimalLocation } from "@/lib/animal-location";
 import { speciesArticle } from "@/lib/species";
 import { AnimalStatusBadge } from "./AnimalStatusBadge";
 import type { Animal } from "@/types/animal";
 
 const FALLBACK_IMAGE = "/images/animals/fallback.svg";
 
-export type AnimalCardProps = Pick<Animal, "id" | "name" | "species" | "breed" | "status" | "imageUrl">;
+export type AnimalCardProps = Pick<
+  Animal,
+  "id" | "name" | "species" | "breed" | "status" | "imageUrl" | "state" | "city"
+>;
 
-export function AnimalCard({ id, name, species, breed, status, imageUrl }: AnimalCardProps) {
+export function AnimalCard({ id, name, species, breed, status, imageUrl, state, city }: AnimalCardProps) {
+  const location = formatAnimalLocation(city, state);
+
   return (
     <Link
       href={`/animais/${id}`}
@@ -42,10 +48,18 @@ export function AnimalCard({ id, name, species, breed, status, imageUrl }: Anima
           {species}
           {breed ? ` · ${breed}` : ""}
         </p>
-        <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">
-          Ver detalhes
-          <ArrowRightIcon className="h-4 w-4" />
-        </span>
+        {location ? (
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <span>{location}</span>
+          </p>
+        ) : null}
+        <div className="mt-auto pt-3">
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">
+            Ver detalhes
+            <ArrowRightIcon className="h-4 w-4" />
+          </span>
+        </div>
       </div>
     </Link>
   );

@@ -13,6 +13,7 @@ import {
   AnimalDetailsNotFound,
 } from "@/components/animals/AnimalDetailsStates";
 import { ArrowLeftIcon } from "@/components/ui/icons";
+import { formatAnimalLocation } from "@/lib/animal-location";
 import { speciesArticle } from "@/lib/species";
 import { ApiError } from "@/services/api";
 import { getAnimalById } from "@/services/animals";
@@ -58,6 +59,7 @@ export default function AnimalDetailsPage() {
   }
 
   const { animal } = state;
+  const location = formatAnimalLocation(animal.city, animal.state);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -115,6 +117,9 @@ export default function AnimalDetailsPage() {
           <li>
             <AnimalInfoTile label="Responsável" value={animal.user?.name ?? "Não informado"} />
           </li>
+          <li>
+            <AnimalInfoTile label="Localização" value={location ?? "Não informada"} />
+          </li>
         </ul>
 
         <section className="space-y-3">
@@ -123,7 +128,7 @@ export default function AnimalDetailsPage() {
         </section>
 
         <footer className="border-t border-slate-200 pt-8">
-          <AdoptionContact animalId={animal.id} animalName={animal.name} />
+          <AdoptionContact animalId={animal.id} animalName={animal.name} status={animal.status} />
         </footer>
       </article>
     </div>

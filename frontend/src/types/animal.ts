@@ -16,6 +16,10 @@ export type Animal = {
   size: string;
   description: string;
   status: AnimalStatus;
+  /** Sigla da UF (IBGE). Ausente/null em anúncios cadastrados antes da localização. */
+  state?: string | null;
+  /** Município (IBGE). Ausente/null em anúncios cadastrados antes da localização. */
+  city?: string | null;
   /** URL pública da foto. `null` quando o anúncio ainda não tem imagem. */
   imageUrl?: string | null;
   userId: string;
@@ -44,6 +48,11 @@ export type User = {
 export type CreateAnimalInput = Pick<
   Animal,
   "name" | "species" | "breed" | "sex" | "size" | "description"
-> & { whatsapp: string; status?: AnimalStatus };
+> & {
+  state: string;
+  city: string;
+  whatsapp: string;
+  status?: AnimalStatus;
+};
 
 export type UpdateAnimalInput = Partial<CreateAnimalInput>;

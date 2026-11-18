@@ -25,6 +25,8 @@ const ANIMALS_SEED = [
     description:
       "A Amber é uma gatinha dócil e carinhosa que procura um novo lar. Adora receber colo, dormir em lugares quentinhos e brincar com bolinhas de papel. Já está castrada e vacinada, se dá bem com outros gatos e é perfeita para apartamentos.",
     status: "DISPONIVEL",
+    state: "SP",
+    city: "São Paulo",
   },
   {
     id: "2",
@@ -36,6 +38,8 @@ const ANIMALS_SEED = [
     description:
       "O Toby é um cãozinho superbrincalhão e companheiro. Caminha bem na coleira, adora crianças e aprende truques rápido. Precisa de espaço para passear e de uma família com tempo para dedicar a ele.",
     status: "DISPONIVEL",
+    state: "RJ",
+    city: "Rio de Janeiro",
   },
   {
     id: "3",
@@ -47,6 +51,8 @@ const ANIMALS_SEED = [
     description:
       "A Mel é uma cadela tranquila e muito apegada às pessoas. Ideal para quem procura companhia dentro de casa: acompanha os tutores pela casa e ama uma soneca no colo. Está castrada e com as vacinas em dia.",
     status: "EM_PROCESSO",
+    state: "MG",
+    city: "Belo Horizonte",
   },
   {
     id: "4",
@@ -58,6 +64,8 @@ const ANIMALS_SEED = [
     description:
       "O Pipoca é uma calopsita curiosa e sociável que canta para chamar atenção. Vive bem em gaiola espaçosa e adora sair para voar pela casa em momentos supervisionados. Vem com a gaiola de presente para quem o adotar.",
     status: "DISPONIVEL",
+    state: "PR",
+    city: "Curitiba",
   },
   {
     id: "5",
@@ -69,6 +77,8 @@ const ANIMALS_SEED = [
     description:
       "O Thor é um filhote gigante de energia infinita. Adora água, buscar bolinha e fazer novos amigos — de humanos e de outros cães. Precisa de família ativa e disposta a investir em adestramento.",
     status: "DISPONIVEL",
+    state: "RS",
+    city: "Porto Alegre",
   },
   {
     id: "6",
@@ -80,6 +90,8 @@ const ANIMALS_SEED = [
     description:
       "A Luna é uma gatinha falante que responde quando você chama. Muito inteligente, já usa a caixa de areia perfeitamente e adora escaladores. Procura uma família paciente com filhotes cheios de energia.",
     status: "DISPONIVEL",
+    state: "SC",
+    city: "Florianópolis",
   },
   {
     id: "7",
@@ -91,6 +103,8 @@ const ANIMALS_SEED = [
     description:
       "O Bidu é um senhor calmo e educado, perfeito para lares mais silenciosos. Convive bem com outros animais, não faz muita bagunça e adora um passeio curto no fim da tarde.",
     status: "ADOTADO",
+    state: "BA",
+    city: "Salvador",
   },
   {
     id: "8",
@@ -102,6 +116,8 @@ const ANIMALS_SEED = [
     description:
       "A Bolota é uma coelhinha curiosa que adora explorar cantos da casa e comer folhas verdes. Precisa de um ambiente seguro para ficar solta parte do dia e de tutores que entendam suas necessidades específicas.",
     status: "DISPONIVEL",
+    state: "PE",
+    city: "Recife",
   },
   {
     id: "9",
@@ -113,6 +129,8 @@ const ANIMALS_SEED = [
     description:
       "O Nino é um gato independente que escolheu o modo vida de apartamento. Dorme a maior parte do dia, mas reserva energia para as sessões de caça ao laser. Se dá bem com gatos tranquilos como ele.",
     status: "DISPONIVEL",
+    state: "DF",
+    city: "Brasília",
   },
 ];
 
@@ -144,6 +162,8 @@ async function main() {
       size: normalizeSize(animal.size),
       description: animal.description,
       status: animal.status,
+      state: animal.state,
+      city: animal.city,
       whatsapp: OWNER_WHATSAPP,
       userId: owner.id,
     };

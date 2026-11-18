@@ -50,6 +50,10 @@ model Animal {
   size          String
   description   String
   status        AnimalStatus @default(DISPONIVEL)
+  /// Sigla da unidade federativa (UF) onde o animal se encontra, conforme IBGE.
+  state         String?
+  /// Município onde o animal se encontra, conforme IBGE.
+  city          String?
   whatsapp      String
   /// URL pública da foto no serviço de armazenamento (Cloudinary).
   imageUrl      String?
