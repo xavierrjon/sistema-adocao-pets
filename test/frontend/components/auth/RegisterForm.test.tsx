@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { RegisterForm } from "./RegisterForm";
+import { RegisterForm } from "@/components/auth/RegisterForm";
 
 beforeEach(() => {
   mocks.register.mockReset();

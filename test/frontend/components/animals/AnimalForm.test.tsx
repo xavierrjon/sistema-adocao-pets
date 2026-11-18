@@ -2,8 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
-import { makeAnimal } from "@/test/animals";
-import { AnimalForm } from "./AnimalForm";
+import { makeAnimal } from "@test/fixtures/animals";
+import { AnimalForm } from "@/components/animals/AnimalForm";
 
 const locationMocks = vi.hoisted(() => ({
   getStates: vi.fn(),

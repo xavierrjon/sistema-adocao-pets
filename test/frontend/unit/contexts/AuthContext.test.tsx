@@ -17,7 +17,7 @@ vi.mock("@/services/auth", () => ({
   register: vi.fn(),
 }));
 
-import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 const user = { id: "1", name: "João Silva", email: "joao@email.com" };
 

@@ -1,8 +1,8 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { makeAnimal } from "@/test/animals";
-import AnimaisPage from "./page";
+import { makeAnimal } from "@test/fixtures/animals";
+import AnimaisPage from "@/app/animais/page";
 
 vi.mock("@/services/animals", () => ({ getAnimals: vi.fn() }));
 

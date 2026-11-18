@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
   usePathname: () => navigationMocks.pathname,
 }));
 
-import { AppFooter } from "./AppFooter";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 function renderFooter() {
   return render(

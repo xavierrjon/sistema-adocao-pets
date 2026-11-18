@@ -2,8 +2,8 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
-import { makeAnimal } from "@/test/animals";
-import MyAnimalsPage from "./page";
+import { makeAnimal } from "@test/fixtures/animals";
+import MyAnimalsPage from "@/app/meus-animais/page";
 
 const navigationMocks = vi.hoisted(() => ({
   searchParams: new URLSearchParams(),

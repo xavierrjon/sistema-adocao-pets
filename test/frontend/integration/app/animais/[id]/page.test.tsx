@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
-import { makeAnimal } from "@/test/animals";
-import AnimalDetailsPage from "./page";
+import { makeAnimal } from "@test/fixtures/animals";
+import AnimalDetailsPage from "@/app/animais/[id]/page";
 
 const navigationMocks = vi.hoisted(() => ({
   id: "5f1c2e78-9b0a-4c31-8a1f-2d6e7b8c9a01",

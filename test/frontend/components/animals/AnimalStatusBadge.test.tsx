@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { AnimalStatusBadge } from "./AnimalStatusBadge";
+import { AnimalStatusBadge } from "@/components/animals/AnimalStatusBadge";
 
 describe("AnimalStatusBadge", () => {
   it("exibe o status disponível", () => {
