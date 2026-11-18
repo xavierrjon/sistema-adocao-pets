@@ -123,11 +123,6 @@ type ImageChange = {
 };
 
 /**
- * Atualiza o anúncio após verificar a propriedade. O arquivo antigo no
- * armazenamento é removido somente depois que a atualização no banco é
- * concluída, evitando perder a imagem em caso de falha.
- */
-/**
  * Verifica a propriedade do anúncio antes de ações com efeito externo
  * (por exemplo, upload de imagem no armazenamento).
  */
@@ -141,6 +136,11 @@ export async function assertAnimalOwnership(id: string, userId: string, action: 
   return animal;
 }
 
+/**
+ * Atualiza o anúncio após verificar a propriedade. O arquivo antigo no
+ * armazenamento é removido somente depois que a atualização no banco é
+ * concluída, evitando perder a imagem em caso de falha.
+ */
 export async function updateAnimal(
   id: string,
   userId: string,
