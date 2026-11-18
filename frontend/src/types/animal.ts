@@ -16,6 +16,8 @@ export type Animal = {
   size: string;
   description: string;
   status: AnimalStatus;
+  /** URL pública da foto. `null` quando o anúncio ainda não tem imagem. */
+  imageUrl?: string | null;
   userId: string;
   createdAt: string;
   updatedAt: string;

@@ -66,12 +66,19 @@ FRONTEND_URL=http://localhost:3000
 NODE_ENV=development
 COOKIE_SAME_SITE=lax
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
+CLOUDINARY_CLOUD_NAME=seu-cloud-name
+CLOUDINARY_API_KEY=sua-api-key
+CLOUDINARY_API_SECRET=sua-api-secret
 ```
 
 > `FRONTEND_URL` define a origem permitida por CORS e pelo checagem de Origin
 > usada contra CSRF. `COOKIE_SAME_SITE` pode ser `lax`, `strict` ou `none`.
 > Quando frontend e backend estiverem em domínios diferentes, use `none` com
 > `Secure` (produção/HTTPS) e, se necessário, defina `COOKIE_DOMAIN`.
+
+> `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` são
+> usados pelo backend para armazenar as fotos dos anúncios (obrigatórios para
+> o upload de imagens; anúncios sem foto funcionam normalmente sem eles).
 
 > O arquivo `.env` não é versionado. O `.env.example` contém apenas os nomes das variáveis.
 
@@ -138,8 +145,8 @@ GET    /api/animals                 (público)
 GET    /api/animals/me               (autenticado)
 GET    /api/animals/:id              (público)
 GET    /api/animals/:id/contact      (autenticado)
-POST   /api/animals                  (autenticado)
-PUT    /api/animals/:id             (autenticado, apenas o responsável)
+POST   /api/animals                  (autenticado; JSON ou multipart com foto opcional)
+PUT    /api/animals/:id             (autenticado, apenas o responsável; JSON ou multipart)
 DELETE /api/animals/:id             (autenticado, apenas o responsável)
 GET    /api/users/:id
 ```
@@ -167,6 +174,27 @@ do responsável não aparece nas listagens nem nos detalhes públicos: visitante
 são direcionados ao login ao clicar em "Quero adotar" e somente
 `GET /api/animals/:id/contact` devolve o contato, mediante sessão válida.
 
+### Upload de imagens dos anúncios
+
+As fotos dos animais são armazenadas no **Cloudinary** (plano gratuito); o
+banco guarda apenas a URL e o identificador do arquivo. Nada é gravado no
+disco do servidor, o que mantém o deploy na Vercel funcional.
+
+- O cadastro (`POST /api/animals`) e a edição (`PUT /api/animals/:id`) aceitam
+  `application/json` ou `multipart/form-data`. No multipart, a foto vai no
+  campo `image` (opcional no cadastro; JPEG, PNG ou WebP, até 5 MB).
+- Na edição, enviar uma nova foto substitui a atual (a antiga é removida do
+  Cloudinary); enviar `removeImage=true` remove a foto sem substituir.
+- A exclusão do anúncio também remove o arquivo associado.
+- O tipo do arquivo é verificado pelo conteúdo (magic bytes), não pela
+  extensão; o `public_id` gerado é um UUID, não previsível.
+- Para configurar: crie uma conta gratuita em [cloudinary.com](https://cloudinary.com),
+  copie as credenciais do dashboard e preencha `CLOUDINARY_CLOUD_NAME`,
+  `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` no `.env`. Em produção
+  (Render/Railway/afins), configure as mesmas variáveis no ambiente do backend.
+- O frontend já autoriza o domínio `res.cloudinary.com` no `next/image`
+  (`frontend/next.config.ts`).
+
 ### Documentação da API (Swagger)
 
 Com o backend em execução:
@@ -192,7 +220,7 @@ testar o fluxo de adoção ponta a ponta:
 npm run db:seed
 ```
 
-A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas. A segunda migration renomeia a coluna de senha para `passwordHash` (convertendo senhas legadas em hashes bcrypt) e cria a tabela `sessions`.
+A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas. A segunda migration renomeia a coluna de senha para `passwordHash` (convertendo senhas legadas em hashes bcrypt) e cria a tabela `sessions`. A terceira adiciona as colunas `imageUrl` e `imagePublicId` à tabela `animals` para as fotos dos anúncios.
 
 ## Scripts úteis
 

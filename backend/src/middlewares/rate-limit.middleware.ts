@@ -20,3 +20,13 @@ export const registerRateLimiter = rateLimit({
   skip: isTestEnvironment,
   message: { error: "Muitos cadastros. Tente novamente mais tarde." },
 });
+
+/** Criação de anúncios: cada requisição pode gerar um upload de imagem. */
+export const createAnimalRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: isTestEnvironment,
+  message: { error: "Muitos anúncios criados em pouco tempo. Tente novamente mais tarde." },
+});

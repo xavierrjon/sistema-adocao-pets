@@ -17,10 +17,23 @@ const prismaMock = vi.hoisted(() => ({
   },
 }));
 
+const storageMocks = vi.hoisted(() => ({
+  uploadAnimalImage: vi.fn(),
+  deleteAnimalImage: vi.fn(),
+}));
+
 vi.mock("../src/lib/prisma", () => ({ default: prismaMock }));
+
+vi.mock("../src/services/storage.service", () => ({
+  ...storageMocks,
+  MAX_IMAGE_SIZE_BYTES: 5 * 1024 * 1024,
+  ALLOWED_IMAGE_MIME_TYPES: ["image/jpeg", "image/png", "image/webp"],
+  detectImageMimeType: vi.fn(),
+}));
 
 import app from "../src/server";
 import { SESSION_COOKIE_NAME } from "../src/lib/auth";
+import { HttpError } from "../src/lib/http-error";
 
 const USER_ID = "3f1b8a52-6c1f-4c65-9d0b-2f4a1e7c9f11";
 const OTHER_USER_ID = "8e4f2b10-7a6d-4c93-b5e1-2d3c4a5b6c7d";
@@ -50,6 +63,23 @@ const otherUsersAnimal = {
   id: "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
   userId: OTHER_USER_ID,
   user: { id: OTHER_USER_ID, name: "Maria Souza" },
+};
+
+// Arquivo válido para os testes de multipart: o conteúdo real (magic bytes) é
+// verificado nos testes unitários de storage; aqui o serviço é simulado.
+const PNG_FILE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+]);
+
+const UPLOADED_IMAGE = {
+  url: "https://res.cloudinary.com/exemplo/image/upload/v1730000000/adoteja/animals/uuid.jpg",
+  publicId: "adoteja/animals/novo-public-id",
+};
+
+const animalWithImage = {
+  ...animal,
+  imageUrl: "https://res.cloudinary.com/exemplo/image/upload/v1730000000/adoteja/animals/antigo.jpg",
+  imagePublicId: "adoteja/animals/antigo-public-id",
 };
 
 const validBody = {
@@ -237,6 +267,214 @@ describe("POST /api/animals", () => {
       .send({ ...validBody, status: "INVALIDO" });
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe("POST /api/animals (multipart com imagem)", () => {
+  it("cadastra o animal com a imagem enviada", async () => {
+    storageMocks.uploadAnimalImage.mockResolvedValue(UPLOADED_IMAGE);
+    prismaMock.animal.create.mockResolvedValue({ ...animal, imageUrl: UPLOADED_IMAGE.url });
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field("name", "Rex")
+      .field("species", "Cachorro")
+      .field("breed", "SRD")
+      .field("sex", "Macho")
+      .field("size", "Medio")
+      .field("description", "Cachorro dócil.")
+      .field("whatsapp", "92999999999")
+      .attach("image", PNG_FILE, { filename: "rex.png", contentType: "image/png" });
+
+    expect(response.status).toBe(201);
+    expect(storageMocks.uploadAnimalImage).toHaveBeenCalledWith(
+      expect.objectContaining({ size: PNG_FILE.length }),
+    );
+    expect(prismaMock.animal.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: "Rex",
+        userId: USER_ID,
+        imageUrl: UPLOADED_IMAGE.url,
+        imagePublicId: UPLOADED_IMAGE.publicId,
+      }),
+    });
+    expect(response.body.imageUrl).toBe(UPLOADED_IMAGE.url);
+  });
+
+  it("cadastra sem imagem quando nenhum arquivo é enviado", async () => {
+    prismaMock.animal.create.mockResolvedValue(animal);
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field(validBody);
+
+    expect(response.status).toBe(201);
+    expect(storageMocks.uploadAnimalImage).not.toHaveBeenCalled();
+    expect(prismaMock.animal.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ imageUrl: null, imagePublicId: null }),
+    });
+  });
+
+  it("não cria o anúncio quando o arquivo é inválido", async () => {
+    storageMocks.uploadAnimalImage.mockRejectedValue(
+      new HttpError(400, "Formato de imagem não suportado. Use JPEG, PNG ou WebP."),
+    );
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field(validBody)
+      .attach("image", Buffer.from("<html>fake</html>"), {
+        filename: "fake.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.animal.create).not.toHaveBeenCalled();
+  });
+
+  it("descarta a imagem enviada quando a criação falha no banco", async () => {
+    storageMocks.uploadAnimalImage.mockResolvedValue(UPLOADED_IMAGE);
+    prismaMock.animal.create.mockRejectedValue(new Error("falha no banco"));
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field(validBody)
+      .attach("image", PNG_FILE, { filename: "rex.png", contentType: "image/png" });
+
+    expect(response.status).toBe(500);
+    expect(storageMocks.deleteAnimalImage).toHaveBeenCalledWith(UPLOADED_IMAGE.publicId);
+  });
+
+  it("falha o upload e não cria o anúncio quando o armazenamento não está configurado", async () => {
+    storageMocks.uploadAnimalImage.mockRejectedValue(
+      new HttpError(503, "Serviço de imagens não configurado."),
+    );
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field(validBody)
+      .attach("image", PNG_FILE, { filename: "rex.png", contentType: "image/png" });
+
+    expect(response.status).toBe(503);
+    expect(prismaMock.animal.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT /api/animals/:id (imagem)", () => {
+  it("substitui a imagem e descarta a antiga do armazenamento", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animalWithImage);
+    storageMocks.uploadAnimalImage.mockResolvedValue(UPLOADED_IMAGE);
+    prismaMock.animal.update.mockResolvedValue({ ...animalWithImage, imageUrl: UPLOADED_IMAGE.url });
+
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field("name", "Rex")
+      .attach("image", PNG_FILE, { filename: "novo.png", contentType: "image/png" });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.update).toHaveBeenCalledWith({
+      where: { id: ANIMAL_ID },
+      data: expect.objectContaining({
+        imageUrl: UPLOADED_IMAGE.url,
+        imagePublicId: UPLOADED_IMAGE.publicId,
+      }),
+    });
+    expect(storageMocks.deleteAnimalImage).toHaveBeenCalledWith("adoteja/animals/antigo-public-id");
+  });
+
+  it("remove a imagem quando removeImage=true é enviado", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animalWithImage);
+    prismaMock.animal.update.mockResolvedValue({ ...animalWithImage, imageUrl: null, imagePublicId: null });
+
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field("name", "Rex")
+      .field("removeImage", "true");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.update).toHaveBeenCalledWith({
+      where: { id: ANIMAL_ID },
+      data: expect.objectContaining({ imageUrl: null, imagePublicId: null }),
+    });
+    expect(storageMocks.deleteAnimalImage).toHaveBeenCalledWith("adoteja/animals/antigo-public-id");
+  });
+
+  it("mantém a imagem quando nenhum arquivo ou remoção é enviado", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animalWithImage);
+    prismaMock.animal.update.mockResolvedValue(animalWithImage);
+
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ name: "Thor" });
+
+    expect(response.status).toBe(200);
+    expect(storageMocks.uploadAnimalImage).not.toHaveBeenCalled();
+    expect(storageMocks.deleteAnimalImage).not.toHaveBeenCalled();
+    expect(prismaMock.animal.update).toHaveBeenCalledWith({
+      where: { id: ANIMAL_ID },
+      data: expect.objectContaining({ name: "Thor" }),
+    });
+  });
+
+  it("bloqueia a substituição de imagem de anúncio de terceiros", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(otherUsersAnimal);
+
+    const response = await request(app)
+      .put(`/api/animals/${otherUsersAnimal.id}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .field("name", "Thor")
+      .attach("image", PNG_FILE, { filename: "novo.png", contentType: "image/png" });
+
+    expect(response.status).toBe(403);
+    // O upload nem chega a acontecer: a propriedade é verificada antes.
+    expect(storageMocks.uploadAnimalImage).not.toHaveBeenCalled();
+    expect(prismaMock.animal.update).not.toHaveBeenCalled();
+    expect(storageMocks.deleteAnimalImage).not.toHaveBeenCalled();
+  });
+});
+
+describe("DELETE /api/animals/:id (imagem)", () => {
+  it("remove o arquivo associado ao excluir o anúncio", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animalWithImage);
+    prismaMock.animal.delete.mockResolvedValue(animalWithImage);
+
+    const response = await request(app)
+      .delete(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN);
+
+    expect(response.status).toBe(204);
+    expect(storageMocks.deleteAnimalImage).toHaveBeenCalledWith("adoteja/animals/antigo-public-id");
+  });
+
+  it("não remove imagem de anúncio de terceiros", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(otherUsersAnimal);
+
+    const response = await request(app)
+      .delete(`/api/animals/${otherUsersAnimal.id}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN);
+
+    expect(response.status).toBe(403);
+    expect(prismaMock.animal.delete).not.toHaveBeenCalled();
+    expect(storageMocks.deleteAnimalImage).not.toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { Prisma } from "@prisma/client";
+import { MulterError } from "multer";
 import { ZodError } from "zod";
 import { HttpError } from "../lib/http-error";
 
@@ -21,6 +22,16 @@ export function errorHandler(
         message: issue.message,
       })),
     });
+    return;
+  }
+
+  if (error instanceof MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      response.status(413).json({ error: "A imagem deve ter no máximo 5 MB." });
+      return;
+    }
+
+    response.status(400).json({ error: "Envie no máximo um arquivo no campo \"image\"." });
     return;
   }
 
