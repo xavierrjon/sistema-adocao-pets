@@ -11,7 +11,7 @@ function errorResponse(): Response {
 /** Cada teste importa o módulo novamente para evitar o cache compartilhado. */
 async function loadLocationService() {
   vi.resetModules();
-  return import("../src/services/location.service");
+  return import("../../../backend/src/services/location.service");
 }
 
 afterEach(() => {
