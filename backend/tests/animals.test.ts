@@ -22,7 +22,13 @@ const storageMocks = vi.hoisted(() => ({
   deleteAnimalImage: vi.fn(),
 }));
 
+const locationMocks = vi.hoisted(() => ({
+  assertValidLocation: vi.fn(),
+}));
+
 vi.mock("../src/lib/prisma", () => ({ default: prismaMock }));
+
+vi.mock("../src/services/location.service", () => locationMocks);
 
 vi.mock("../src/services/storage.service", () => ({
   ...storageMocks,
@@ -51,6 +57,8 @@ const animal = {
   size: "Medio",
   description: "Cachorro dócil.",
   status: "DISPONIVEL",
+  state: "SP",
+  city: "São Paulo",
   whatsapp: "92999999999",
   userId: USER_ID,
   createdAt: new Date().toISOString(),
@@ -90,10 +98,13 @@ const validBody = {
   size: "Medio",
   description: "Cachorro dócil.",
   whatsapp: "92999999999",
+  state: "SP",
+  city: "São Paulo",
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  // reseta também implementações (mockRejectedValue de testes anteriores).
+  vi.resetAllMocks();
   prismaMock.session.findUnique.mockResolvedValue({
     id: "c1e7f4a0-1234-4c8e-9f2a-5b6c7d8e9f01",
     expiresAt: new Date(Date.now() + 60 * 60 * 1000),
@@ -119,8 +130,13 @@ describe("GET /api/animals", () => {
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0].name).toBe("Rex");
+    expect(response.body[0].state).toBe("SP");
+    expect(response.body[0].city).toBe("São Paulo");
     expect(response.body[0].whatsapp).toBeUndefined();
     expect(response.body[0].user.whatsapp).toBeUndefined();
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { status: "DISPONIVEL" } }),
+    );
   });
 
   it("retorna lista vazia quando não há animais", async () => {
@@ -243,9 +259,80 @@ describe("POST /api/animals", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.status).toBe("DISPONIVEL");
+    expect(response.body.state).toBe("SP");
+    expect(response.body.city).toBe("São Paulo");
+    expect(locationMocks.assertValidLocation).toHaveBeenCalledWith("SP", "São Paulo");
     expect(prismaMock.animal.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ ...validBody, userId: USER_ID }),
     });
+  });
+
+  it("cria o anúncio com status padrão DISPONIVEL quando não informado", async () => {
+    prismaMock.animal.create.mockResolvedValue(animal);
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send(validBody);
+
+    expect(response.status).toBe(201);
+    expect(response.body.status).toBe("DISPONIVEL");
+    expect(prismaMock.animal.create.mock.calls[0][0].data).not.toHaveProperty("status");
+  });
+
+  it("persiste a localização informada no cadastro", async () => {
+    prismaMock.animal.create.mockResolvedValue(animal);
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ ...validBody, state: "rj", city: "Rio de Janeiro" });
+
+    expect(response.status).toBe(201);
+    expect(locationMocks.assertValidLocation).toHaveBeenCalledWith("RJ", "Rio de Janeiro");
+    expect(prismaMock.animal.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ state: "RJ", city: "Rio de Janeiro" }),
+    });
+  });
+
+  it("rejeita localização incompatível antes de criar o anúncio", async () => {
+    locationMocks.assertValidLocation.mockRejectedValue(
+      new HttpError(400, 'A cidade "Santos" não pertence ao estado RJ.'),
+    );
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ ...validBody, state: "RJ", city: "Santos" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("não pertence ao estado RJ");
+    expect(prismaMock.animal.create).not.toHaveBeenCalled();
+  });
+
+  it("rejeita UF com formato inválido", async () => {
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ ...validBody, state: "São Paulo" });
+
+    expect(response.status).toBe(400);
+    expect(locationMocks.assertValidLocation).not.toHaveBeenCalled();
+  });
+
+  it("rejeita status inválido no cadastro", async () => {
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ ...validBody, status: "INVALIDO" });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.animal.create).not.toHaveBeenCalled();
   });
 
   it("retorna 400 quando faltam campos obrigatórios", async () => {
@@ -259,15 +346,6 @@ describe("POST /api/animals", () => {
     expect(prismaMock.animal.create).not.toHaveBeenCalled();
   });
 
-  it("retorna 400 para valores de enum inválidos", async () => {
-    const response = await request(app)
-      .post("/api/animals")
-      .set("Cookie", COOKIE)
-      .set("Origin", ORIGIN)
-      .send({ ...validBody, status: "INVALIDO" });
-
-    expect(response.status).toBe(400);
-  });
 });
 
 describe("POST /api/animals (multipart com imagem)", () => {
@@ -286,6 +364,8 @@ describe("POST /api/animals (multipart com imagem)", () => {
       .field("size", "Medio")
       .field("description", "Cachorro dócil.")
       .field("whatsapp", "92999999999")
+      .field("state", "SP")
+      .field("city", "São Paulo")
       .attach("image", PNG_FILE, { filename: "rex.png", contentType: "image/png" });
 
     expect(response.status).toBe(201);
@@ -491,6 +571,105 @@ describe("PUT /api/animals/:id", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.name).toBe("Thor");
+  });
+
+  it.each(["DISPONIVEL", "EM_PROCESSO", "ADOTADO"])(
+    "persiste o status %s na atualização",
+    async (status) => {
+      prismaMock.animal.findUnique.mockResolvedValue(animal);
+      prismaMock.animal.update.mockResolvedValue({ ...animal, status });
+
+      const response = await request(app)
+        .put(`/api/animals/${ANIMAL_ID}`)
+        .set("Cookie", COOKIE)
+        .set("Origin", ORIGIN)
+        .send({ status });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe(status);
+      expect(prismaMock.animal.update).toHaveBeenCalledWith({
+        where: { id: ANIMAL_ID },
+        data: { status },
+      });
+      expect(locationMocks.assertValidLocation).not.toHaveBeenCalled();
+    },
+  );
+
+  it("bloqueia a alteração de status de anúncio de outro usuário", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(otherUsersAnimal);
+
+    const response = await request(app)
+      .put(`/api/animals/${otherUsersAnimal.id}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ status: "ADOTADO" });
+
+    expect(response.status).toBe(403);
+    expect(prismaMock.animal.update).not.toHaveBeenCalled();
+  });
+
+  it("atualiza a localização do próprio anúncio", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animal);
+    prismaMock.animal.update.mockResolvedValue({ ...animal, state: "RJ", city: "Niterói" });
+
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ state: "rj", city: "Niterói" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.state).toBe("RJ");
+    expect(response.body.city).toBe("Niterói");
+    expect(locationMocks.assertValidLocation).toHaveBeenCalledWith("RJ", "Niterói");
+    expect(prismaMock.animal.update).toHaveBeenCalledWith({
+      where: { id: ANIMAL_ID },
+      data: { state: "RJ", city: "Niterói" },
+    });
+  });
+
+  it("rejeita localização incompatível na atualização", async () => {
+    prismaMock.animal.findUnique.mockResolvedValue(animal);
+    locationMocks.assertValidLocation.mockRejectedValue(
+      new HttpError(400, 'A cidade "Santos" não pertence ao estado RJ.'),
+    );
+
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ state: "RJ", city: "Santos" });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.animal.update).not.toHaveBeenCalled();
+  });
+
+  it("exige estado e cidade juntos na atualização", async () => {
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ state: "SP" });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.animal.update).not.toHaveBeenCalled();
+  });
+
+  it("mantém compatibilidade com anúncio sem localização ao alterar apenas o status", async () => {
+    const legacyAnimal = { ...animal, state: null, city: null };
+    prismaMock.animal.findUnique.mockResolvedValue(legacyAnimal);
+    prismaMock.animal.update.mockResolvedValue({ ...legacyAnimal, status: "ADOTADO" });
+
+    const response = await request(app)
+      .put(`/api/animals/${ANIMAL_ID}`)
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ status: "ADOTADO" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.state).toBeNull();
+    expect(response.body.city).toBeNull();
+    expect(locationMocks.assertValidLocation).not.toHaveBeenCalled();
   });
 
   it("retorna 403 ao tentar editar animal de outro usuário", async () => {
