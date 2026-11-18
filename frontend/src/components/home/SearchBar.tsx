@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { SearchIcon } from "@/components/ui/icons";
+import { CloseIcon, SearchIcon } from "@/components/ui/icons";
 
 type SearchBarProps = {
   /** Valor controlado (opcional) para uso em páginas que filtram em memória. */
@@ -49,6 +49,11 @@ export function SearchBar({
     }
   }
 
+  function handleClear() {
+    handleChange("");
+    onSubmit?.("");
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -65,8 +70,19 @@ export function SearchBar({
           onChange={(event) => handleChange(event.target.value)}
           placeholder={placeholder}
           aria-label="Buscar por nome, raça ou espécie"
-          className="pl-11 pr-5"
+          className={`pl-11 ${query ? "pr-12" : "pr-5"}`}
         />
+        {query && (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label="Limpar busca"
+            title="Limpar busca"
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        )}
       </div>
       <Button type="submit" variant="primary" className="sm:self-auto">
         Buscar

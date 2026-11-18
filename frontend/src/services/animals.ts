@@ -1,6 +1,7 @@
 import type {
   Animal,
   AnimalContact,
+  AnimalStatus,
   CreateAnimalInput,
   UpdateAnimalInput,
 } from "@/types/animal";
@@ -10,12 +11,32 @@ export type HealthResponse = {
   status: string;
 };
 
+/** Filtros aceitos pela listagem pública (`GET /animals`). */
+export type AnimalListFilters = {
+  /** Pesquisa por nome, raça, descrição ou espécie. */
+  q?: string;
+  species?: string;
+  sex?: string;
+  size?: string;
+  status?: AnimalStatus;
+};
+
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>("/health");
 }
 
-export function getAnimals(): Promise<Animal[]> {
-  return request<Animal[]>("/animals");
+export function getAnimals(filters: AnimalListFilters = {}): Promise<Animal[]> {
+  const params = new URLSearchParams();
+
+  const query = filters.q?.trim();
+  if (query) params.set("q", query);
+  if (filters.species) params.set("species", filters.species);
+  if (filters.sex) params.set("sex", filters.sex);
+  if (filters.size) params.set("size", filters.size);
+  if (filters.status) params.set("status", filters.status);
+
+  const search = params.toString();
+  return request<Animal[]>(`/animals${search ? `?${search}` : ""}`);
 }
 
 export function getAnimalById(id: string): Promise<Animal> {
