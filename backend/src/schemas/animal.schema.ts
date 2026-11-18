@@ -5,6 +5,13 @@ export const ANIMAL_SEXES = ["Macho", "Femea"] as const;
 export const ANIMAL_SIZES = ["Pequeno", "Medio", "Grande"] as const;
 export const ANIMAL_STATUSES = ["DISPONIVEL", "EM_PROCESSO", "ADOTADO"] as const;
 
+/**
+ * Espécies aceitas na filtragem da vitrine. "Ave" não é aceita no cadastro,
+ * mas existe em anúncios antigos e na categoria "Aves" da home; "Outro"
+ * representa todas as demais espécies (por exemplo, coelhos).
+ */
+export const ANIMAL_SPECIES_FILTER = ["Cachorro", "Gato", "Ave", "Outro"] as const;
+
 const whatsappSchema = z
   .string()
   .trim()
@@ -68,5 +75,49 @@ export const animalParamsSchema = z.object({
   id: z.string().uuid("ID deve ser um UUID válido."),
 });
 
+/** Normaliza parâmetros de consulta: remove espaços e trata vazios como ausentes. */
+const normalizeFilterValue = (value: unknown) =>
+  typeof value === "string" ? value.trim() || undefined : value;
+
+const filterParam = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(normalizeFilterValue, schema.optional());
+
+/**
+ * Pesquisa e filtros da listagem pública. Todos os parâmetros são opcionais e
+ * combináveis; sem `status`, a vitrine mantém o comportamento original e
+ * retorna apenas animais disponíveis.
+ */
+export const listAnimalsQuerySchema = z.object({
+  q: z.preprocess(
+    normalizeFilterValue,
+    z
+      .string()
+      .trim()
+      .max(120, "Busca deve ter no máximo 120 caracteres.")
+      .optional(),
+  ),
+  species: filterParam(
+    z.enum(ANIMAL_SPECIES_FILTER, {
+      message: `Espécie deve ser: ${ANIMAL_SPECIES_FILTER.join(", ")}.`,
+    }),
+  ),
+  sex: filterParam(
+    z.enum(ANIMAL_SEXES, {
+      message: `Sexo deve ser: ${ANIMAL_SEXES.join(", ")}.`,
+    }),
+  ),
+  size: filterParam(
+    z.enum(ANIMAL_SIZES, {
+      message: `Porte deve ser: ${ANIMAL_SIZES.join(", ")}.`,
+    }),
+  ),
+  status: filterParam(
+    z.enum(ANIMAL_STATUSES, {
+      message: `Status deve ser: ${ANIMAL_STATUSES.join(", ")}.`,
+    }),
+  ),
+});
+
 export type CreateAnimalInput = z.infer<typeof createAnimalSchema>;
 export type UpdateAnimalInput = z.infer<typeof updateAnimalSchema>;
+export type ListAnimalsQuery = z.infer<typeof listAnimalsQuerySchema>;
