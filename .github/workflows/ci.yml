@@ -6,10 +6,22 @@ on:
   pull_request:
     branches: [develop, main]
 
+# O pipeline apenas lê o repositório.
+permissions:
+  contents: read
+
+# Cancela execuções antigas da mesma branch quando uma nova é enviada.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,12 +39,19 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --workspace frontend
 
+      - name: Testes
+        run: npm run test --workspace frontend
+
       - name: Build
         run: npm run build --workspace frontend
 
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      FRONTEND_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +77,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck --workspace backend
+
+      - name: Testes
+        run: npm run test --workspace backend
 
       - name: Build
         run: npm run build --workspace backend
