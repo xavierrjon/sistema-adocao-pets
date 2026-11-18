@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { makeAnimal } from "@/test/animals";
-import { AnimalCard } from "./AnimalCard";
+import { makeAnimal } from "@test/fixtures/animals";
+import { AnimalCard } from "@/components/animals/AnimalCard";
 
 // next/image exige a configuração do Next em tempo de build; nos testes de
 // componente substituímos pelo <img> equivalente.

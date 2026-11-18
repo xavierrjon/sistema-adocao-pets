@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { makeAnimal } from "@/test/animals";
-import Home from "./page";
+import { makeAnimal } from "@test/fixtures/animals";
+import Home from "@/app/page";
 
 vi.mock("@/services/animals", () => ({ getAnimals: vi.fn() }));
 

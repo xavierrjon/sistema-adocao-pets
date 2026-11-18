@@ -222,11 +222,48 @@ npm run db:seed
 
 A migration inicial cria as tabelas `users` e `animals`, o enum de status e o relacionamento entre elas. A segunda migration renomeia a coluna de senha para `passwordHash` (convertendo senhas legadas em hashes bcrypt) e cria a tabela `sessions`. A terceira adiciona as colunas `imageUrl` e `imagePublicId` à tabela `animals` para as fotos dos anúncios.
 
+## Testes
+
+Os testes automatizados ficam centralizados na pasta `test/`, separados por aplicação e responsabilidade:
+
+```text
+test/
+├── backend/
+│   ├── unit/            # serviços isolados (armazenamento e localização)
+│   └── integration/     # rotas da API com Prisma mockado
+└── frontend/
+    ├── unit/            # serviços, utilitários e contextos
+    ├── components/      # componentes de UI
+    ├── integration/     # páginas do App Router
+    ├── fixtures/        # dados reutilizáveis (ex.: animal de teste)
+    └── helpers/         # setup compartilhado do Vitest
+```
+
+- **Backend:** Vitest + Supertest. Os testes não dependem de PostgreSQL nem de
+  serviços externos: o Prisma, o Cloudinary e o IBGE são mockados.
+- **Frontend:** Vitest + Testing Library em ambiente `jsdom`, com o setup
+  compartilhado em `test/frontend/helpers/setup.ts`.
+- **E2E:** não há suíte E2E configurada no projeto até o momento.
+
+Na raiz do repositório:
+
+```bash
+npm test              # executa os testes do backend e do frontend
+npm run test:backend  # somente os testes do backend
+npm run test:frontend # somente os testes do frontend
+npm run typecheck     # verificação de tipos (inclui os testes do frontend)
+npm run build         # build de produção do frontend e do backend
+```
+
+Em `backend/` ou `frontend/`, `npm test` executa a suíte da aplicação e
+`npm run test:watch` mantém o Vitest em modo de observação.
+
 ## Scripts úteis
 
 Na raiz do repositório:
 
 - `npm run dev` — inicia frontend e backend simultaneamente
+- `npm test` — executa os testes de backend e frontend
 - `npm run build` — build de frontend e backend
 - `npm run typecheck` — verificação de tipos
 
@@ -247,11 +284,17 @@ Alterações são integradas via **Pull Request** (`feature/*` → `develop` →
 
 ## CI/CD
 
-O **GitHub Actions** executa, para cada Pull Request e push em `develop`/`main`:
+O workflow em `.github/workflows/ci.yml` é executado para cada Pull Request e
+push em `develop` e `main`, com jobs independentes para frontend e backend:
 
-- Checkout
-- Instalação das dependências
+- Checkout e instalação das dependências com `npm ci` (cache do npm)
+- Backend: geração e validação do schema do Prisma
 - Typecheck
-- Build
+- Testes automatizados
+- Build de produção
+
+Os testes usam apenas mocks e não precisam de PostgreSQL, Cloudinary ou outros
+serviços externos no ambiente de CI. Qualquer falha em typecheck, testes ou
+build interrompe a execução do job correspondente.
 
 A publicação do frontend é feita na **Vercel** (`develop` → ambiente de desenvolvimento, `main` → produção).

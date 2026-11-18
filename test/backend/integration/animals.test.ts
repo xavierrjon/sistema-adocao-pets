@@ -26,20 +26,20 @@ const locationMocks = vi.hoisted(() => ({
   assertValidLocation: vi.fn(),
 }));
 
-vi.mock("../src/lib/prisma", () => ({ default: prismaMock }));
+vi.mock("../../../backend/src/lib/prisma", () => ({ default: prismaMock }));
 
-vi.mock("../src/services/location.service", () => locationMocks);
+vi.mock("../../../backend/src/services/location.service", () => locationMocks);
 
-vi.mock("../src/services/storage.service", () => ({
+vi.mock("../../../backend/src/services/storage.service", () => ({
   ...storageMocks,
   MAX_IMAGE_SIZE_BYTES: 5 * 1024 * 1024,
   ALLOWED_IMAGE_MIME_TYPES: ["image/jpeg", "image/png", "image/webp"],
   detectImageMimeType: vi.fn(),
 }));
 
-import app from "../src/server";
-import { SESSION_COOKIE_NAME } from "../src/lib/auth";
-import { HttpError } from "../src/lib/http-error";
+import app from "../../../backend/src/server";
+import { SESSION_COOKIE_NAME } from "../../../backend/src/lib/auth";
+import { HttpError } from "../../../backend/src/lib/http-error";
 
 const USER_ID = "3f1b8a52-6c1f-4c65-9d0b-2f4a1e7c9f11";
 const OTHER_USER_ID = "8e4f2b10-7a6d-4c93-b5e1-2d3c4a5b6c7d";

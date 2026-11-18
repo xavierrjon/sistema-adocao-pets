@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { LoginForm } from "./LoginForm";
+import { LoginForm } from "@/components/auth/LoginForm";
 
 const user = { id: "1", name: "João Silva", email: "joao@email.com" };
 

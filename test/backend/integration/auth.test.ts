@@ -13,12 +13,12 @@ const prismaMock = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../src/lib/prisma", () => ({ default: prismaMock }));
+vi.mock("../../../backend/src/lib/prisma", () => ({ default: prismaMock }));
 
-import app from "../src/server";
-import { SESSION_COOKIE_NAME } from "../src/lib/auth";
-import { hashToken } from "../src/lib/token";
-import { hashPassword, verifyPassword } from "../src/utils/password";
+import app from "../../../backend/src/server";
+import { SESSION_COOKIE_NAME } from "../../../backend/src/lib/auth";
+import { hashToken } from "../../../backend/src/lib/token";
+import { hashPassword, verifyPassword } from "../../../backend/src/utils/password";
 
 const USER_ID = "3f1b8a52-6c1f-4c65-9d0b-2f4a1e7c9f11";
 const SESSION_ID = "c1e7f4a0-1234-4c8e-9f2a-5b6c7d8e9f01";

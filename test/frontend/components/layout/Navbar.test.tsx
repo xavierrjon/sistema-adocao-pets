@@ -32,7 +32,7 @@ vi.mock("@/contexts/AuthContext", () => ({
   }),
 }));
 
-import { Navbar } from "./Navbar";
+import { Navbar } from "@/components/layout/Navbar";
 
 describe("Navbar", () => {
   beforeEach(() => {

@@ -41,7 +41,7 @@ vi.mock("@/services/animals", () => ({
   getAnimalContact: apiMocks.getAnimalContact,
 }));
 
-import { AdoptionContact } from "./AdoptionContact";
+import { AdoptionContact } from "@/components/animals/AdoptionContact";
 
 function renderContact(status: AnimalStatus = "DISPONIVEL") {
   return render(<AdoptionContact animalId={ANIMAL_ID} animalName="Amber" status={status} />);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeNextPath, withNext } from "./redirect";
+import { safeNextPath, withNext } from "@/lib/redirect";
 
 describe("safeNextPath", () => {
   it("aceita caminhos locais", () => {

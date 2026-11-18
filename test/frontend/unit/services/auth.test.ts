@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
-import { getCurrentUser, login, logout, register } from "./auth";
+import { getCurrentUser, login, logout, register } from "@/services/auth";
 
 const fetchMock = vi.fn();
 
