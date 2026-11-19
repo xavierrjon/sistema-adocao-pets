@@ -72,8 +72,9 @@ jobs:
       - name: Validar schema do Prisma
         run: npm run prisma:validate --workspace backend
         env:
-          # Valor placeholder: a validação do schema é offline e não conecta ao banco.
+          # Valores placeholder: a validação do schema é offline e não conecta ao banco.
           DATABASE_URL: postgresql://usuario:senha@localhost:5432/banco?schema=public
+          DIRECT_URL: postgresql://usuario:senha@localhost:5432/banco?schema=public
 
       - name: Typecheck
         run: npm run typecheck --workspace backend
