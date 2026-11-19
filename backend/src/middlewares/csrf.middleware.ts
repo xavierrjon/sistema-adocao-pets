@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { getAllowedOrigins, SESSION_COOKIE_NAME } from "../lib/auth";
+import { isAllowedOrigin, SESSION_COOKIE_NAME } from "../lib/auth";
 import { HttpError } from "../lib/http-error";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -28,7 +28,7 @@ export function csrfProtection(request: Request, _response: Response, next: Next
     return;
   }
 
-  if (getAllowedOrigins().includes(origin)) {
+  if (isAllowedOrigin(origin)) {
     next();
     return;
   }

@@ -12,11 +12,43 @@ export const SESSION_DURATION = {
   remember: 30 * DAY,
 } as const;
 
+/**
+ * Origens do frontend publicado que precisam de CORS em produção.
+ * Mantidas explicitamente para que o deploy funcione mesmo se FRONTEND_URL
+ * não estiver definida no ambiente da Vercel.
+ */
+const PRODUCTION_ORIGINS = [
+  "https://adoteja-murex.vercel.app",
+  "https://adoteja-am.vercel.app",
+] as const;
+
+/** Origens usadas apenas no desenvolvimento local. */
+const DEVELOPMENT_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;
+
+function normalizeOrigin(origin: string): string {
+  // O navegador envia a origem sem barra final e em minúsculas.
+  return origin.trim().replace(/\/+$/, "").toLowerCase();
+}
+
 export function getAllowedOrigins(): string[] {
-  return (process.env.FRONTEND_URL ?? "http://localhost:3000")
+  const configured = (process.env.FRONTEND_URL ?? "")
     .split(",")
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
+
+  // Origens publicadas valem em qualquer ambiente; localhost só fora de produção.
+  const defaults =
+    process.env.NODE_ENV === "production"
+      ? PRODUCTION_ORIGINS
+      : [...PRODUCTION_ORIGINS, ...DEVELOPMENT_ORIGINS];
+
+  return Array.from(new Set([...configured, ...defaults.map(normalizeOrigin)]));
+}
+
+export function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return false;
+
+  return getAllowedOrigins().includes(normalizeOrigin(origin));
 }
 
 function getSameSite(): CookieOptions["sameSite"] {
