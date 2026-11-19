@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AnimalStatus {
+  DISPONIVEL
+  EM_PROCESSO
+  ADOTADO
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  whatsapp     String?
+  animals      Animal[]
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Animal {
+  id            String       @id @default(uuid())
+  name          String
+  species       String
+  breed         String
+  sex           String
+  size          String
+  description   String
+  status        AnimalStatus @default(DISPONIVEL)
+  /// Sigla da unidade federativa (UF) onde o animal se encontra, conforme IBGE.
+  state         String?
+  /// Município onde o animal se encontra, conforme IBGE.
+  city          String?
+  whatsapp      String
+  /// URL pública da foto no serviço de armazenamento (Cloudinary).
+  imageUrl      String?
+  /// Identificador do arquivo no serviço de armazenamento, usado para
+  /// substituir a imagem na edição e removê-la na exclusão do anúncio.
+  imagePublicId String?
+  userId        String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@map("animals")
+}

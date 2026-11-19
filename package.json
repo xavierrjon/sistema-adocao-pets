@@ -1,0 +1,25 @@
+{
+  "name": "adoteja",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plataforma web para divulgação e adoção responsável de animais.",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace frontend & npm run dev --workspace backend",
+    "build": "npm run build --workspace frontend && npm run build --workspace backend",
+    "typecheck": "npm run typecheck --workspace frontend && npm run typecheck --workspace backend",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run test --workspace backend",
+    "test:frontend": "npm run test --workspace frontend",
+    "db:seed": "npm run db:seed --workspace backend"
+  },
+  "allowScripts": {
+    "esbuild@0.23.1": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true
+  }
+}
