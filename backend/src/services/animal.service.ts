@@ -1,6 +1,11 @@
+import type { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma";
 import { HttpError } from "../lib/http-error";
-import type { CreateAnimalInput, UpdateAnimalInput } from "../schemas/animal.schema";
+import type {
+  CreateAnimalInput,
+  ListAnimalsQuery,
+  UpdateAnimalInput,
+} from "../schemas/animal.schema";
 import { deleteAnimalImage, type UploadedImage } from "./storage.service";
 
 type AnimalRecord = {
@@ -64,10 +69,44 @@ async function getAnimalRecord(id: string): Promise<AnimalRecord> {
   return animal;
 }
 
-export async function listAnimals() {
+/**
+ * Monta o `where` da vitrine pública combinando pesquisa textual e filtros.
+ * A busca ignora maiúsculas/minúsculas e percorre os campos textuais exibidos
+ * no anúncio. "Outro" agrupa todas as espécies que não são cães nem gatos.
+ */
+function buildPublicAnimalsWhere(filters: ListAnimalsQuery): Prisma.AnimalWhereInput {
   // A vitrine pública mostra apenas animais que ainda procuram uma família.
+  const where: Prisma.AnimalWhereInput = { status: "DISPONIVEL" };
+
+  if (filters.species) {
+    where.species =
+      filters.species === "Outro" ? { notIn: ["Cachorro", "Gato", "Ave"] } : filters.species;
+  }
+
+  if (filters.sex) {
+    where.sex = filters.sex;
+  }
+
+  if (filters.size) {
+    where.size = filters.size;
+  }
+
+  if (filters.q) {
+    const contains = { contains: filters.q, mode: "insensitive" as const };
+    where.OR = [
+      { name: contains },
+      { breed: contains },
+      { description: contains },
+      { species: contains },
+    ];
+  }
+
+  return where;
+}
+
+export async function listAnimals(filters: ListAnimalsQuery = {}) {
   const animals = await prisma.animal.findMany({
-    where: { status: "DISPONIVEL" },
+    where: buildPublicAnimalsWhere(filters),
     include: { user: { select: publicUserSelect } },
     orderBy: { createdAt: "desc" },
   });

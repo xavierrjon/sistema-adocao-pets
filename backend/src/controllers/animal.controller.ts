@@ -6,11 +6,13 @@ import * as storageService from "../services/storage.service";
 import {
   animalParamsSchema,
   createAnimalSchema,
+  listAnimalsQuerySchema,
   updateAnimalSchema,
 } from "../schemas/animal.schema";
 
-export async function listAnimals(_request: Request, response: Response) {
-  const animals = await animalService.listAnimals();
+export async function listAnimals(request: Request, response: Response) {
+  const filters = listAnimalsQuerySchema.parse(request.query);
+  const animals = await animalService.listAnimals(filters);
   response.status(200).json(animals);
 }
 

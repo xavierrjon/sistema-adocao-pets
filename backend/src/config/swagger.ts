@@ -96,6 +96,44 @@ const createAnimalExample = {
   city: "São Paulo",
 };
 
+/** Parâmetros de pesquisa e filtro da listagem pública de animais. */
+const animalListQueryParams = [
+  {
+    name: "q",
+    in: "query" as const,
+    required: false,
+    description:
+      "Pesquisa textual por nome, raça, descrição ou espécie. Não diferencia maiúsculas de " +
+      "minúsculas e ignora espaços no início e no fim. Máximo de 120 caracteres.",
+    schema: { type: "string", maxLength: 120 },
+    example: "gatinha",
+  },
+  {
+    name: "species",
+    in: "query" as const,
+    required: false,
+    description:
+      "Filtra por espécie. `Ave` atende anúncios antigos da categoria Aves e `Outro` agrupa " +
+      "todas as espécies que não são cães, gatos nem aves (por exemplo, coelhos). " +
+      "Pode ser combinado com os demais parâmetros.",
+    schema: { $ref: "#/components/schemas/AnimalSpeciesFilter" },
+  },
+  {
+    name: "sex",
+    in: "query" as const,
+    required: false,
+    description: "Filtra por sexo. Pode ser combinado com os demais parâmetros.",
+    schema: { $ref: "#/components/schemas/AnimalSex" },
+  },
+  {
+    name: "size",
+    in: "query" as const,
+    required: false,
+    description: "Filtra por porte. Pode ser combinado com os demais parâmetros.",
+    schema: { $ref: "#/components/schemas/AnimalSize" },
+  },
+];
+
 export const swaggerSpec = {
   openapi: "3.0.3",
   info: {
@@ -300,16 +338,22 @@ export const swaggerSpec = {
     "/animals": {
       get: {
         tags: ["Animais"],
-        summary: "Lista animais disponíveis para adoção",
+        summary: "Lista animais com pesquisa e filtros",
         description:
-          "Retorna apenas os animais com status `DISPONIVEL`, ordenados do mais recente para o mais " +
-          "antigo, com os dados públicos do responsável. Animais `EM_PROCESSO` ou `ADOTADO` não " +
-          "aparecem nesta vitrine. O WhatsApp do responsável nunca é incluído nesta resposta.",
+          "Retorna apenas animais `DISPONIVEL`, ordenados do mais recente para o mais antigo, com " +
+          "os dados públicos do responsável. Animais `EM_PROCESSO` ou `ADOTADO` não aparecem na " +
+          "vitrine.\n\n" +
+          "Todos os parâmetros são opcionais e combináveis. A pesquisa textual (`q`) e os filtros " +
+          "de espécie, sexo e porte são aplicados na mesma consulta. Parâmetros com valores " +
+          "fora dos enums documentados retornam `400`.\n\n" +
+          "O WhatsApp do responsável nunca é incluído nesta resposta: use " +
+          "`GET /animals/{id}/contact` com sessão válida.",
         operationId: "listAnimals",
         security: [],
+        parameters: animalListQueryParams,
         responses: {
           200: {
-            description: "Lista de animais disponíveis (pode ser vazia).",
+            description: "Lista de animais que correspondem aos critérios (pode ser vazia).",
             content: {
               "application/json": {
                 schema: {
@@ -320,6 +364,10 @@ export const swaggerSpec = {
               },
             },
           },
+          400: errorResponse("Parâmetros de pesquisa ou filtro inválidos.", {
+            error: "Dados inválidos.",
+            details: [{ field: "size", message: "Porte deve ser: Pequeno, Medio, Grande." }],
+          }),
           500: internalErrorResponse,
         },
       },
@@ -658,6 +706,14 @@ export const swaggerSpec = {
       AnimalSpecies: {
         type: "string",
         enum: ["Cachorro", "Gato", "Outro"],
+        example: "Gato",
+      },
+      AnimalSpeciesFilter: {
+        type: "string",
+        enum: ["Cachorro", "Gato", "Ave", "Outro"],
+        description:
+          "Espécie usada na filtragem. `Ave` atende anúncios antigos da categoria Aves e " +
+          "`Outro` agrupa todas as espécies que não são cães, gatos nem aves.",
         example: "Gato",
       },
       AnimalSex: {

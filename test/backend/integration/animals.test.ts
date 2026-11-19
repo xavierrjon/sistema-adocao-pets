@@ -147,6 +147,141 @@ describe("GET /api/animals", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual([]);
   });
+
+  it("pesquisa por texto em campos públicos sem diferenciar maiúsculas", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    const response = await request(app).get("/api/animals?q=%20REX%20");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: "DISPONIVEL",
+          OR: [
+            { name: { contains: "REX", mode: "insensitive" } },
+            { breed: { contains: "REX", mode: "insensitive" } },
+            { description: { contains: "REX", mode: "insensitive" } },
+            { species: { contains: "REX", mode: "insensitive" } },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("combina pesquisa textual e todos os filtros na mesma consulta", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    const response = await request(app).get(
+      "/api/animals?q=mel&species=Cachorro&sex=Femea&size=Pequeno",
+    );
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: "DISPONIVEL",
+          species: "Cachorro",
+          sex: "Femea",
+          size: "Pequeno",
+          OR: expect.arrayContaining([
+            { name: { contains: "mel", mode: "insensitive" } },
+          ]),
+        },
+      }),
+    );
+  });
+
+  it("filtra por espécie, sexo e porte individualmente", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    await request(app).get("/api/animals?species=Gato");
+    await request(app).get("/api/animals?sex=Macho");
+    await request(app).get("/api/animals?size=Grande");
+
+    expect(prismaMock.animal.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ where: { status: "DISPONIVEL", species: "Gato" } }),
+    );
+    expect(prismaMock.animal.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { status: "DISPONIVEL", sex: "Macho" } }),
+    );
+    expect(prismaMock.animal.findMany).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ where: { status: "DISPONIVEL", size: "Grande" } }),
+    );
+  });
+
+  it("ignora filtro de status e não expõe animais adotados ou em processo", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    const response = await request(app).get("/api/animals?status=ADOTADO");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { status: "DISPONIVEL" } }),
+    );
+  });
+
+  it("agrupa as demais espécies ao filtrar por Outro", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([]);
+
+    const response = await request(app).get("/api/animals?species=Outro");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: "DISPONIVEL",
+          species: { notIn: ["Cachorro", "Gato", "Ave"] },
+        },
+      }),
+    );
+  });
+
+  it("aceita a categoria legada Ave na filtragem", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([]);
+
+    const response = await request(app).get("/api/animals?species=Ave");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: "DISPONIVEL", species: "Ave" },
+      }),
+    );
+  });
+
+  it("ignora parâmetros vazios e mantém o comportamento padrão", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    const response = await request(app).get("/api/animals?q=&species=&sex=&size=");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { status: "DISPONIVEL" } }),
+    );
+  });
+
+  it.each([
+    ["species", "Peixe"],
+    ["sex", "Indefinido"],
+    ["size", "Gigante"],
+  ])("retorna 400 para %s inválido", async (field, value) => {
+    const response = await request(app).get(`/api/animals?${field}=${encodeURIComponent(value)}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Dados inválidos.");
+    expect(prismaMock.animal.findMany).not.toHaveBeenCalled();
+  });
+
+  it("retorna 400 quando o termo de pesquisa excede 120 caracteres", async () => {
+    const response = await request(app).get(`/api/animals?q=${"a".repeat(121)}`);
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.animal.findMany).not.toHaveBeenCalled();
+  });
 });
 
 describe("GET /api/animals/me", () => {

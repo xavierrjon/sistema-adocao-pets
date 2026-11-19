@@ -23,7 +23,7 @@ type AnimalsEmptyStateProps = {
 
 export function AnimalsEmptyState({
   title = "Nenhum animal encontrado",
-  message = "Tente ajustar a busca ou escolher outra categoria para ver mais animais.",
+  message = "Tente ajustar a busca ou os filtros para ver mais animais.",
   onClearFilters,
 }: AnimalsEmptyStateProps) {
   return (
@@ -37,7 +37,7 @@ export function AnimalsEmptyState({
       </div>
       {onClearFilters && (
         <Button variant="outline" size="sm" onClick={onClearFilters}>
-          Limpar filtros
+          Limpar busca e filtros
         </Button>
       )}
     </div>
