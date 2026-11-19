@@ -1,0 +1,36 @@
+# Dependências
+node_modules/
+
+# Build
+.next/
+dist/
+build/
+
+# Ambiente
+.env
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cobertura de testes
+coverage/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Gerado automaticamente pelo next dev
+frontend/AGENTS.md
+
+# Docker volumes locais
+postgres_data/

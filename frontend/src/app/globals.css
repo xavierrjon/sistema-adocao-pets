@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/*
+ * Identidade visual do AdoteJá.
+ * Cores centralizadas aqui — evitar valores hexadecimais nos componentes.
+ */
+@theme {
+  /* Fundo geral: azul muito claro */
+  --color-background: #f5f9ff;
+
+  /* Cor principal (azul) e variações */
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9ecff;
+  --color-brand-200: #bcdfff;
+  --color-brand-300: #8cccff;
+  --color-brand-400: #57b0fc;
+  --color-brand-500: #3191f7;
+  --color-brand-600: #1d73ec;
+  --color-brand-700: #155bd9;
+  --color-brand-800: #174baf;
+  --color-brand-900: #19428a;
+  --color-brand-950: #142a54;
+
+  /* Estados dos animais */
+  --color-available: #16a34a;
+  --color-process: #d97706;
+  --color-adopted: #64748b;
+}
+
+@theme inline {
+  --font-sans: var(--font-nunito);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-slate-800);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

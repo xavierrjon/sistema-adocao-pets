@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Ilustração do cachorro Bidu">
+  
+  <defs>
+    <linearGradient id="bg-bidu" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F1EDFF" />
+      <stop offset="1" stop-color="#DCD5F8" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg-bidu)" />
+  <circle cx="52" cy="58" r="26" fill="#ffffff" opacity="0.4" />
+  <circle cx="352" cy="248" r="32" fill="#ffffff" opacity="0.35" />
+  <circle cx="318" cy="52" r="14" fill="#ffffff" opacity="0.4" />
+  <circle cx="200" cy="164" r="88" fill="#C7CCD6" />
+  <ellipse cx="112" cy="150" rx="33" ry="56" fill="#A9B0BD" transform="rotate(12 112 150)" />
+  <ellipse cx="288" cy="150" rx="33" ry="56" fill="#A9B0BD" transform="rotate(-12 288 150)" />
+  <ellipse cx="170" cy="148" rx="12" ry="15" fill="#42342B" />
+  <circle cx="174" cy="143" r="4" fill="#ffffff" opacity="0.9" />
+  <ellipse cx="230" cy="148" rx="12" ry="15" fill="#42342B" />
+  <circle cx="234" cy="143" r="4" fill="#ffffff" opacity="0.9" />
+  <ellipse cx="200" cy="196" rx="52" ry="38" fill="#E6E9EF" />
+  <ellipse cx="200" cy="218" rx="12" ry="10" fill="#F27D7D" />
+  <ellipse cx="200" cy="180" rx="16" ry="11" fill="#42342B" />
+  <ellipse cx="194" cy="176" rx="5" ry="3" fill="#ffffff" opacity="0.7" />
+  <path d="M200 191 L200 202" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M200 202 Q188 212 178 204" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M200 202 Q212 212 222 204" stroke="#42342B" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M140 234 Q200 288 260 234" stroke="#EF476F" stroke-width="16" stroke-linecap="round" fill="none" />
+  <circle cx="200" cy="276" r="11" fill="#FFD166" stroke="#D9A930" stroke-width="3" />
+</svg>

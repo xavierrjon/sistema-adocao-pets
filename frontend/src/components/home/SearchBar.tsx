@@ -1,0 +1,124 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { CloseIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
+
+type SearchBarProps = {
+  /** Valor controlado (opcional) para uso em páginas que filtram em memória. */
+  value?: string;
+  onChange?: (value: string) => void;
+  /** Chamado ao enviar o formulário; sem ele, navega para `/animais?q=...`. */
+  onSubmit?: (query: string) => void;
+  /** Exibe o botão que abre e fecha o painel de filtros. */
+  onToggleFilters?: () => void;
+  filtersOpen?: boolean;
+  /** Quantidade de filtros ativos, mostrada como badge no botão. */
+  activeFilterCount?: number;
+  placeholder?: string;
+  className?: string;
+};
+
+export function SearchBar({
+  value,
+  onChange,
+  onSubmit,
+  onToggleFilters,
+  filtersOpen = false,
+  activeFilterCount = 0,
+  placeholder = "Buscar por nome, raça ou espécie...",
+  className = "",
+}: SearchBarProps) {
+  const router = useRouter();
+  const [internalValue, setInternalValue] = useState("");
+
+  const isControlled = value !== undefined;
+  const query = isControlled ? value : internalValue;
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (onSubmit) {
+      onSubmit(query);
+      return;
+    }
+
+    const trimmed = query.trim();
+    router.push(trimmed ? `/animais?q=${encodeURIComponent(trimmed)}` : "/animais");
+  }
+
+  function handleChange(nextValue: string) {
+    if (isControlled) {
+      onChange?.(nextValue);
+    } else {
+      setInternalValue(nextValue);
+    }
+  }
+
+  function handleClear() {
+    handleChange("");
+    onSubmit?.("");
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      role="search"
+      aria-label="Buscar animais"
+      className={`flex flex-col gap-3 sm:flex-row ${className}`}
+    >
+      <div className="relative flex-1">
+        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+        <Input
+          type="search"
+          name="q"
+          value={query}
+          onChange={(event) => handleChange(event.target.value)}
+          placeholder={placeholder}
+          aria-label="Buscar por nome, raça ou espécie"
+          className={`pl-11 ${query ? "pr-12" : "pr-5"}`}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label="Limpar busca"
+            title="Limpar busca"
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      <Button type="submit" variant="primary" className="sm:self-auto">
+        Buscar
+      </Button>
+      {onToggleFilters && (
+        <Button
+          type="button"
+          variant={filtersOpen ? "secondary" : "outline"}
+          onClick={onToggleFilters}
+          aria-expanded={filtersOpen}
+          aria-controls={filtersOpen ? "animal-filters" : undefined}
+          aria-label={
+            `${filtersOpen ? "Ocultar" : "Mostrar"} filtros` +
+            (activeFilterCount > 0
+              ? ` (${activeFilterCount} ${activeFilterCount === 1 ? "ativo" : "ativos"})`
+              : "")
+          }
+          className="sm:self-auto"
+        >
+          <FilterIcon className="h-4 w-4" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-extrabold text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
+      )}
+    </form>
+  );
+}
