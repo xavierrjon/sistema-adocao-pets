@@ -173,14 +173,14 @@ describe("GET /api/animals", () => {
     prismaMock.animal.findMany.mockResolvedValue([animal]);
 
     const response = await request(app).get(
-      "/api/animals?q=mel&species=Cachorro&sex=Femea&size=Pequeno&status=EM_PROCESSO",
+      "/api/animals?q=mel&species=Cachorro&sex=Femea&size=Pequeno",
     );
 
     expect(response.status).toBe(200);
     expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          status: "EM_PROCESSO",
+          status: "DISPONIVEL",
           species: "Cachorro",
           sex: "Femea",
           size: "Pequeno",
@@ -192,13 +192,12 @@ describe("GET /api/animals", () => {
     );
   });
 
-  it("filtra por cada atributo individualmente", async () => {
+  it("filtra por espécie, sexo e porte individualmente", async () => {
     prismaMock.animal.findMany.mockResolvedValue([animal]);
 
     await request(app).get("/api/animals?species=Gato");
     await request(app).get("/api/animals?sex=Macho");
     await request(app).get("/api/animals?size=Grande");
-    await request(app).get("/api/animals?status=ADOTADO");
 
     expect(prismaMock.animal.findMany).toHaveBeenNthCalledWith(
       1,
@@ -212,9 +211,16 @@ describe("GET /api/animals", () => {
       3,
       expect.objectContaining({ where: { status: "DISPONIVEL", size: "Grande" } }),
     );
-    expect(prismaMock.animal.findMany).toHaveBeenNthCalledWith(
-      4,
-      expect.objectContaining({ where: { status: "ADOTADO" } }),
+  });
+
+  it("ignora filtro de status e não expõe animais adotados ou em processo", async () => {
+    prismaMock.animal.findMany.mockResolvedValue([animal]);
+
+    const response = await request(app).get("/api/animals?status=ADOTADO");
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { status: "DISPONIVEL" } }),
     );
   });
 
@@ -250,9 +256,7 @@ describe("GET /api/animals", () => {
   it("ignora parâmetros vazios e mantém o comportamento padrão", async () => {
     prismaMock.animal.findMany.mockResolvedValue([animal]);
 
-    const response = await request(app).get(
-      "/api/animals?q=&species=&sex=&size=&status=",
-    );
+    const response = await request(app).get("/api/animals?q=&species=&sex=&size=");
 
     expect(response.status).toBe(200);
     expect(prismaMock.animal.findMany).toHaveBeenCalledWith(
@@ -261,7 +265,6 @@ describe("GET /api/animals", () => {
   });
 
   it.each([
-    ["status", "INVALIDO"],
     ["species", "Peixe"],
     ["sex", "Indefinido"],
     ["size", "Gigante"],

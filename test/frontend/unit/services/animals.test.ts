@@ -37,17 +37,16 @@ describe("serviço de animais", () => {
       species: "Gato",
       sex: "Femea",
       size: "Medio",
-      status: "ADOTADO",
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/api/animals?q=gato&species=Gato&sex=Femea&size=Medio&status=ADOTADO",
+      "http://localhost:3001/api/animals?q=gato&species=Gato&sex=Femea&size=Medio",
       expect.objectContaining({ credentials: "include" }),
     );
   });
 
   it("ignora valores vazios", async () => {
-    await getAnimals({ q: "   ", species: "", sex: "", size: "", status: undefined });
+    await getAnimals({ q: "   ", species: "", sex: "", size: "" });
 
     expect(fetchMock).toHaveBeenCalledWith(
       "http://localhost:3001/api/animals",

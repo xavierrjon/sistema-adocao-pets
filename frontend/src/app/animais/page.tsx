@@ -6,7 +6,6 @@ import {
   AnimalFilters,
   type AnimalSexFilter,
   type AnimalSizeFilter,
-  type AnimalStatusFilter,
 } from "@/components/animals/AnimalFilters";
 import { AnimalGrid } from "@/components/animals/AnimalGrid";
 import { AnimalsEmptyState, AnimalsErrorState } from "@/components/animals/AnimalStates";
@@ -35,7 +34,7 @@ function AnimaisContent() {
   );
   const [sex, setSex] = useState<AnimalSexFilter>("");
   const [size, setSize] = useState<AnimalSizeFilter>("");
-  const [status, setStatus] = useState<AnimalStatusFilter>("DISPONIVEL");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +62,6 @@ function AnimaisContent() {
       species: categoryToSpecies(category),
       sex: sex || undefined,
       size: size || undefined,
-      status,
     })
       .then((result) => {
         if (active) setAnimals(result);
@@ -78,7 +76,7 @@ function AnimaisContent() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery, category, sex, size, status, retryKey]);
+  }, [debouncedQuery, category, sex, size, retryKey]);
 
   function handleSearch(value: string) {
     setQuery(value);
@@ -92,17 +90,13 @@ function AnimaisContent() {
     setCategory("Todos");
     setSex("");
     setSize("");
-    setStatus("DISPONIVEL");
   }
 
   const isDebouncing = query.trim() !== debouncedQuery;
   const isBusy = isLoading || isDebouncing;
-  const hasActiveFilters =
-    query.trim() !== "" ||
-    category !== "Todos" ||
-    sex !== "" ||
-    size !== "" ||
-    status !== "DISPONIVEL";
+  const activeFilterCount =
+    (category !== "Todos" ? 1 : 0) + (sex !== "" ? 1 : 0) + (size !== "" ? 1 : 0);
+  const hasActiveFilters = query.trim() !== "" || activeFilterCount > 0;
   const isInitialLoading = isLoading && animals.length === 0;
 
   return (
@@ -122,30 +116,41 @@ function AnimaisContent() {
             value={query}
             onChange={setQuery}
             onSubmit={handleSearch}
+            onToggleFilters={() => setIsFiltersOpen((isOpen) => !isOpen)}
+            filtersOpen={isFiltersOpen}
+            activeFilterCount={activeFilterCount}
             placeholder="Buscar por nome, raça, descrição ou espécie..."
           />
         </div>
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="mt-2">
-          <AnimalFilters
-            activeCategory={category}
-            onCategoryChange={setCategory}
-            sex={sex}
-            onSexChange={setSex}
-            size={size}
-            onSizeChange={setSize}
-            status={status}
-            onStatusChange={setStatus}
-            onClearFilters={clearFilters}
-            resultCount={animals.length}
-            isLoading={isBusy}
-            hasActiveFilters={hasActiveFilters}
-          />
-        </div>
+        {isFiltersOpen && (
+          <div id="animal-filters" className="mt-4">
+            <AnimalFilters
+              activeCategory={category}
+              onCategoryChange={setCategory}
+              sex={sex}
+              onSexChange={setSex}
+              size={size}
+              onSizeChange={setSize}
+              onClearFilters={clearFilters}
+              hasActiveFilters={activeFilterCount > 0}
+            />
+          </div>
+        )}
 
         <div className="mt-6">
+          {!hasError && (
+            <p className="mb-4 text-sm text-slate-500" role="status" aria-live="polite">
+              {isBusy
+                ? "Atualizando resultados..."
+                : animals.length === 1
+                  ? "1 animal encontrado"
+                  : `${animals.length} animais encontrados`}
+            </p>
+          )}
+
           {hasError ? (
             <AnimalsErrorState onRetry={() => setRetryKey((value) => value + 1)} />
           ) : isInitialLoading ? (

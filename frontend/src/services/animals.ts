@@ -1,7 +1,6 @@
 import type {
   Animal,
   AnimalContact,
-  AnimalStatus,
   CreateAnimalInput,
   UpdateAnimalInput,
 } from "@/types/animal";
@@ -18,7 +17,6 @@ export type AnimalListFilters = {
   species?: string;
   sex?: string;
   size?: string;
-  status?: AnimalStatus;
 };
 
 export function getHealth(): Promise<HealthResponse> {
@@ -33,7 +31,6 @@ export function getAnimals(filters: AnimalListFilters = {}): Promise<Animal[]> {
   if (filters.species) params.set("species", filters.species);
   if (filters.sex) params.set("sex", filters.sex);
   if (filters.size) params.set("size", filters.size);
-  if (filters.status) params.set("status", filters.status);
 
   const search = params.toString();
   return request<Animal[]>(`/animals${search ? `?${search}` : ""}`);

@@ -37,7 +37,7 @@ export function AnimalsEmptyState({
       </div>
       {onClearFilters && (
         <Button variant="outline" size="sm" onClick={onClearFilters}>
-          Limpar filtros
+          Limpar busca e filtros
         </Button>
       )}
     </div>

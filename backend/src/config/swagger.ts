@@ -132,15 +132,6 @@ const animalListQueryParams = [
     description: "Filtra por porte. Pode ser combinado com os demais parâmetros.",
     schema: { $ref: "#/components/schemas/AnimalSize" },
   },
-  {
-    name: "status",
-    in: "query" as const,
-    required: false,
-    description:
-      "Filtra pela situação de adoção. Quando omitido, retorna apenas animais `DISPONIVEL`, " +
-      "preservando o comportamento padrão da vitrine.",
-    schema: { $ref: "#/components/schemas/AnimalStatus" },
-  },
 ];
 
 export const swaggerSpec = {
@@ -349,11 +340,11 @@ export const swaggerSpec = {
         tags: ["Animais"],
         summary: "Lista animais com pesquisa e filtros",
         description:
-          "Retorna os animais ordenados do mais recente para o mais antigo, com os dados públicos " +
-          "do responsável. Sem filtro de status, a vitrine retorna apenas animais `DISPONIVEL`; " +
-          "informe `status` para consultar animais `EM_PROCESSO` ou `ADOTADO`.\n\n" +
+          "Retorna apenas animais `DISPONIVEL`, ordenados do mais recente para o mais antigo, com " +
+          "os dados públicos do responsável. Animais `EM_PROCESSO` ou `ADOTADO` não aparecem na " +
+          "vitrine.\n\n" +
           "Todos os parâmetros são opcionais e combináveis. A pesquisa textual (`q`) e os filtros " +
-          "de espécie, sexo, porte e status são aplicados na mesma consulta. Parâmetros com valores " +
+          "de espécie, sexo e porte são aplicados na mesma consulta. Parâmetros com valores " +
           "fora dos enums documentados retornam `400`.\n\n" +
           "O WhatsApp do responsável nunca é incluído nesta resposta: use " +
           "`GET /animals/{id}/contact` com sessão válida.",

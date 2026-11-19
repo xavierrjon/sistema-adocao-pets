@@ -35,13 +35,13 @@ const animals: Animal[] = [
 /** Reproduz no teste o contrato de pesquisa e filtros do backend. */
 function filterAnimals(filters: AnimalListFilters = {}): Animal[] {
   const query = filters.q?.toLowerCase();
-  const status = filters.status ?? "DISPONIVEL";
 
   return animals.filter((animal) => {
-    if (animal.status !== status) return false;
+    // A vitrine pública nunca retorna animais adotados ou em processo.
+    if (animal.status !== "DISPONIVEL") return false;
 
     if (filters.species === "Outro") {
-      if (["Cachorro", "Gato"].includes(animal.species)) return false;
+      if (["Cachorro", "Gato", "Ave"].includes(animal.species)) return false;
     } else if (filters.species && animal.species !== filters.species) {
       return false;
     }
@@ -64,22 +64,39 @@ function lastFilters(): AnimalListFilters {
   return mockedGetAnimals.mock.calls.at(-1)?.[0] ?? {};
 }
 
+async function openFilters(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /Mostrar filtros/ }));
+}
+
 describe("Página de animais", () => {
   beforeEach(() => {
     mockedGetAnimals.mockReset();
     mockedGetAnimals.mockImplementation(async (filters) => filterAnimals(filters));
   });
 
-  it("exibe o título, a busca e os controles de filtro", async () => {
+  it("exibe o título e a busca, mantendo os filtros ocultos até clicar no ícone", async () => {
+    const user = userEvent.setup();
     render(<AnimaisPage />);
 
     expect(screen.getByRole("heading", { name: "Animais para adoção" })).toBeInTheDocument();
+    expect(screen.getByRole("search")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mostrar filtros/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Cães/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Sexo")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Porte")).not.toBeInTheDocument();
+
+    await openFilters(user);
+
     expect(screen.getByRole("button", { name: /Todos/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cães/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Gatos/ })).toBeInTheDocument();
     expect(screen.getByLabelText("Sexo")).toBeInTheDocument();
     expect(screen.getByLabelText("Porte")).toBeInTheDocument();
-    expect(screen.getByLabelText("Status de adoção")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Status de adoção")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Ocultar filtros/ }));
+
+    expect(screen.queryByRole("button", { name: /Cães/ })).not.toBeInTheDocument();
   });
 
   it("carrega os animais disponíveis retornados pela API", async () => {
@@ -99,7 +116,7 @@ describe("Página de animais", () => {
     expect(screen.queryByText("Mel")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("2 animais encontrados");
     expect(mockedGetAnimals).toHaveBeenCalledTimes(1);
-    expect(lastFilters()).toEqual({ status: "DISPONIVEL" });
+    expect(lastFilters()).toEqual({});
   });
 
   it("filtra os animais por categoria usando a API", async () => {
@@ -107,13 +124,14 @@ describe("Página de animais", () => {
     render(<AnimaisPage />);
 
     await screen.findByText("Toby");
+    await openFilters(user);
 
     await user.click(screen.getByRole("button", { name: /Gatos/ }));
 
     await screen.findByText("Amber");
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
     expect(screen.queryByText("Toby")).not.toBeInTheDocument();
-    expect(lastFilters()).toEqual({ species: "Gato", status: "DISPONIVEL" });
+    expect(lastFilters()).toEqual({ species: "Gato" });
   });
 
   it("pesquisa pela API após o debounce", async () => {
@@ -130,7 +148,7 @@ describe("Página de animais", () => {
     });
     expect(screen.getByText("Toby")).toBeInTheDocument();
     expect(screen.queryByText("Amber")).not.toBeInTheDocument();
-    expect(lastFilters()).toEqual({ q: "Toby", status: "DISPONIVEL" });
+    expect(lastFilters()).toEqual({ q: "Toby" });
   });
 
   it("combina espécie, sexo e porte na mesma consulta", async () => {
@@ -138,6 +156,7 @@ describe("Página de animais", () => {
     render(<AnimaisPage />);
 
     await screen.findByText("Toby");
+    await openFilters(user);
 
     await user.click(screen.getByRole("button", { name: /Cães/ }));
     await user.selectOptions(screen.getByLabelText("Sexo"), "Macho");
@@ -152,29 +171,29 @@ describe("Página de animais", () => {
       species: "Cachorro",
       sex: "Macho",
       size: "Grande",
-      status: "DISPONIVEL",
     });
   });
 
-  it("filtra por status e remove o filtro individualmente", async () => {
+  it("remove um filtro individualmente", async () => {
     const user = userEvent.setup();
     render(<AnimaisPage />);
 
     await screen.findByText("Toby");
+    await openFilters(user);
 
-    await user.selectOptions(screen.getByLabelText("Status de adoção"), "EM_PROCESSO");
+    await user.selectOptions(screen.getByLabelText("Sexo"), "Macho");
 
-    expect(await screen.findByText("Mel")).toBeInTheDocument();
-    expect(screen.queryByText("Toby")).not.toBeInTheDocument();
-    expect(screen.getByText("Status: Em processo")).toBeInTheDocument();
-    expect(lastFilters()).toEqual({ status: "EM_PROCESSO" });
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
+    expect(screen.getByText("Sexo: Macho")).toBeInTheDocument();
+    expect(screen.queryByText("Amber")).not.toBeInTheDocument();
+    expect(lastFilters()).toEqual({ sex: "Macho" });
 
-    await user.click(screen.getByRole("button", { name: "Remover filtro Status" }));
+    await user.click(screen.getByRole("button", { name: "Remover filtro Sexo" }));
 
-    await screen.findByText("Toby");
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("2 animais encontrados"));
-    expect(screen.queryByText("Status: Em processo")).not.toBeInTheDocument();
-    expect(lastFilters()).toEqual({ status: "DISPONIVEL" });
+    expect(screen.queryByText("Sexo: Macho")).not.toBeInTheDocument();
+    expect(screen.getByText("Amber")).toBeInTheDocument();
+    expect(lastFilters()).toEqual({});
   });
 
   it("combina pesquisa textual com filtros", async () => {
@@ -182,12 +201,13 @@ describe("Página de animais", () => {
     render(<AnimaisPage />);
 
     await screen.findByText("Toby");
+    await openFilters(user);
 
     await user.type(screen.getByLabelText("Buscar por nome, raça ou espécie"), "Toby");
     await user.selectOptions(screen.getByLabelText("Sexo"), "Macho");
 
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
-    expect(lastFilters()).toEqual({ q: "Toby", sex: "Macho", status: "DISPONIVEL" });
+    expect(lastFilters()).toEqual({ q: "Toby", sex: "Macho" });
   });
 
   it("limpa todos os filtros e restaura a listagem", async () => {
@@ -195,6 +215,7 @@ describe("Página de animais", () => {
     render(<AnimaisPage />);
 
     await screen.findByText("Toby");
+    await openFilters(user);
 
     await user.click(screen.getByRole("button", { name: /Gatos/ }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
@@ -205,7 +226,24 @@ describe("Página de animais", () => {
     expect(screen.getByText("Amber")).toBeInTheDocument();
     expect(screen.getByText("Toby")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Todos/ })).toHaveAttribute("aria-pressed", "true");
-    expect(lastFilters()).toEqual({ status: "DISPONIVEL" });
+    expect(lastFilters()).toEqual({});
+  });
+
+  it("mostra a quantidade de filtros ativos ao fechar o painel", async () => {
+    const user = userEvent.setup();
+    render(<AnimaisPage />);
+
+    await screen.findByText("Toby");
+    await openFilters(user);
+
+    await user.click(screen.getByRole("button", { name: /Gatos/ }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
+
+    await user.click(screen.getByRole("button", { name: /Ocultar filtros/ }));
+
+    expect(screen.getByRole("button", { name: "Mostrar filtros (1 ativo)" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Gatos/ })).not.toBeInTheDocument();
+    expect(lastFilters()).toEqual({ species: "Gato" });
   });
 
   it("exibe o estado vazio quando a API retorna uma lista vazia", async () => {
@@ -226,10 +264,10 @@ describe("Página de animais", () => {
 
     expect(await screen.findByText("Nenhum animal encontrado")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    await user.click(screen.getByRole("button", { name: "Limpar busca e filtros" }));
 
     await screen.findByText("Amber");
-    expect(lastFilters()).toEqual({ status: "DISPONIVEL" });
+    expect(lastFilters()).toEqual({});
   });
 
   it("limpa apenas o termo de pesquisa", async () => {

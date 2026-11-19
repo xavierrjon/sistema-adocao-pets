@@ -3,12 +3,9 @@ import { CategoryList } from "@/components/home/CategoryList";
 import { Button } from "@/components/ui/Button";
 import { CloseIcon } from "@/components/ui/icons";
 import type { AnimalCategory } from "@/lib/categories";
-import { ANIMAL_STATUS_LABELS, ANIMAL_STATUS_VALUES } from "@/lib/animal-status";
-import type { AnimalStatus } from "@/types/animal";
 
 export type AnimalSexFilter = "" | "Macho" | "Femea";
 export type AnimalSizeFilter = "" | "Pequeno" | "Medio" | "Grande";
-export type AnimalStatusFilter = AnimalStatus;
 
 type AnimalFiltersProps = {
   activeCategory: AnimalCategory;
@@ -17,12 +14,7 @@ type AnimalFiltersProps = {
   onSexChange: (sex: AnimalSexFilter) => void;
   size: AnimalSizeFilter;
   onSizeChange: (size: AnimalSizeFilter) => void;
-  status: AnimalStatusFilter;
-  onStatusChange: (status: AnimalStatusFilter) => void;
   onClearFilters: () => void;
-  resultCount: number;
-  /** Oculta a contagem e indica atualização enquanto a lista carrega. */
-  isLoading?: boolean;
   hasActiveFilters: boolean;
 };
 
@@ -82,11 +74,7 @@ export function AnimalFilters({
   onSexChange,
   size,
   onSizeChange,
-  status,
-  onStatusChange,
   onClearFilters,
-  resultCount,
-  isLoading = false,
   hasActiveFilters,
 }: AnimalFiltersProps) {
   const activeFilters: ActiveFilter[] = [];
@@ -118,20 +106,11 @@ export function AnimalFilters({
     });
   }
 
-  if (status !== "DISPONIVEL") {
-    activeFilters.push({
-      key: "status",
-      label: "Status",
-      value: ANIMAL_STATUS_LABELS[status].label,
-      onRemove: () => onStatusChange("DISPONIVEL"),
-    });
-  }
-
   return (
     <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-extrabold text-slate-900">Filtrar animais</h2>
-        {hasActiveFilters && resultCount > 0 && (
+        {hasActiveFilters && (
           <Button variant="outline" size="sm" onClick={onClearFilters}>
             Limpar filtros
           </Button>
@@ -146,7 +125,7 @@ export function AnimalFilters({
           <CategoryList active={activeCategory} onSelect={onCategoryChange} />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FilterSelect
             id="filter-sex"
             label="Sexo"
@@ -169,19 +148,6 @@ export function AnimalFilters({
             {SIZE_OPTIONS.map((option) => (
               <option key={option.value || "all"} value={option.value}>
                 {option.label}
-              </option>
-            ))}
-          </FilterSelect>
-
-          <FilterSelect
-            id="filter-status"
-            label="Status de adoção"
-            value={status}
-            onChange={(value) => onStatusChange(value as AnimalStatusFilter)}
-          >
-            {ANIMAL_STATUS_VALUES.map((value) => (
-              <option key={value} value={value}>
-                {ANIMAL_STATUS_LABELS[value].label}
               </option>
             ))}
           </FilterSelect>
@@ -208,14 +174,6 @@ export function AnimalFilters({
           </ul>
         )}
       </div>
-
-      <p className="mt-4 text-sm text-slate-500" role="status" aria-live="polite">
-        {isLoading
-          ? "Atualizando resultados..."
-          : resultCount === 1
-            ? "1 animal encontrado"
-            : `${resultCount} animais encontrados`}
-      </p>
     </div>
   );
 }

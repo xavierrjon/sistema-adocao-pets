@@ -75,10 +75,8 @@ async function getAnimalRecord(id: string): Promise<AnimalRecord> {
  * no anúncio. "Outro" agrupa todas as espécies que não são cães nem gatos.
  */
 function buildPublicAnimalsWhere(filters: ListAnimalsQuery): Prisma.AnimalWhereInput {
-  const where: Prisma.AnimalWhereInput = {
-    // Sem filtro explícito, preserva o comportamento original da vitrine.
-    status: filters.status ?? "DISPONIVEL",
-  };
+  // A vitrine pública mostra apenas animais que ainda procuram uma família.
+  const where: Prisma.AnimalWhereInput = { status: "DISPONIVEL" };
 
   if (filters.species) {
     where.species =
@@ -107,8 +105,6 @@ function buildPublicAnimalsWhere(filters: ListAnimalsQuery): Prisma.AnimalWhereI
 }
 
 export async function listAnimals(filters: ListAnimalsQuery = {}) {
-  // A vitrine pública mostra apenas animais que ainda procuram uma família,
-  // a menos que o visitante filtre explicitamente por outro status.
   const animals = await prisma.animal.findMany({
     where: buildPublicAnimalsWhere(filters),
     include: { user: { select: publicUserSelect } },

@@ -84,8 +84,7 @@ const filterParam = <T extends z.ZodType>(schema: T) =>
 
 /**
  * Pesquisa e filtros da listagem pública. Todos os parâmetros são opcionais e
- * combináveis; sem `status`, a vitrine mantém o comportamento original e
- * retorna apenas animais disponíveis.
+ * combináveis; a vitrine sempre retorna apenas animais disponíveis.
  */
 export const listAnimalsQuerySchema = z.object({
   q: z.preprocess(
@@ -109,11 +108,6 @@ export const listAnimalsQuerySchema = z.object({
   size: filterParam(
     z.enum(ANIMAL_SIZES, {
       message: `Porte deve ser: ${ANIMAL_SIZES.join(", ")}.`,
-    }),
-  ),
-  status: filterParam(
-    z.enum(ANIMAL_STATUSES, {
-      message: `Status deve ser: ${ANIMAL_STATUSES.join(", ")}.`,
     }),
   ),
 });
