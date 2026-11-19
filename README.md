@@ -71,10 +71,13 @@ CLOUDINARY_API_KEY=sua-api-key
 CLOUDINARY_API_SECRET=sua-api-secret
 ```
 
-> `FRONTEND_URL` define a origem permitida por CORS e pelo checagem de Origin
-> usada contra CSRF. `COOKIE_SAME_SITE` pode ser `lax`, `strict` ou `none`.
-> Quando frontend e backend estiverem em domínios diferentes, use `none` com
-> `Secure` (produção/HTTPS) e, se necessário, defina `COOKIE_DOMAIN`.
+> `FRONTEND_URL` define as origens permitidas por CORS e pela checagem de Origin
+> usada contra CSRF. Aceita várias origens separadas por vírgula. As origens
+> publicadas `https://adoteja-murex.vercel.app` e `https://adoteja-am.vercel.app`
+> são permitidas por padrão (inclusive em produção), e `localhost` continua
+> liberado fora de produção. `COOKIE_SAME_SITE` pode ser `lax`, `strict` ou
+> `none`. Quando frontend e backend estiverem em domínios diferentes, use
+> `none` com `Secure` (produção/HTTPS) e, se necessário, defina `COOKIE_DOMAIN`.
 
 > `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` são
 > usados pelo backend para armazenar as fotos dos anúncios (obrigatórios para
@@ -298,3 +301,22 @@ serviços externos no ambiente de CI. Qualquer falha em typecheck, testes ou
 build interrompe a execução do job correspondente.
 
 A publicação do frontend é feita na **Vercel** (`develop` → ambiente de desenvolvimento, `main` → produção).
+
+## Deploy na Vercel (CORS e cookies)
+
+A API responde CORS com `credentials: true` apenas para as origens permitidas e
+trata o preflight `OPTIONS` (204) antes de chegar às rotas. As origens públicas
+`https://adoteja-murex.vercel.app` e `https://adoteja-am.vercel.app` já são
+liberadas pelo código; origens adicionais devem ser informadas em `FRONTEND_URL`
+(separadas por vírgula, sem barra final).
+
+No projeto do backend na Vercel, confira as variáveis de ambiente:
+
+- `FRONTEND_URL` — origem exata do frontend publicado (ex.: `https://adoteja-murex.vercel.app`).
+- `COOKIE_SAME_SITE=none` — frontend e API ficam em subdomínios distintos de
+  `vercel.app`; sem isso o navegador não envia o cookie de sessão nas requisições
+  cross-site. Em produção o cookie já é marcado como `Secure` automaticamente.
+- `NODE_ENV=production` — a Vercel define automaticamente.
+
+A configuração de CORS não guarda estado no processo: cada requisição é avaliada
+individualmente, o que a mantém compatível com o ambiente serverless.

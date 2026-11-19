@@ -9,14 +9,22 @@ import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import routes from "./routes";
 import { swaggerSpec } from "./config/swagger";
-import { getAllowedOrigins } from "./lib/auth";
+import { isAllowedOrigin } from "./lib/auth";
 import { HttpError } from "./lib/http-error";
 import { csrfProtection } from "./middlewares/csrf.middleware";
 import { errorHandler, notFoundHandler } from "./middlewares/error-handler";
 
 const app = express();
 
-const allowedOrigins = getAllowedOrigins();
+const CORS_METHODS = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"];
+
+const CORS_ALLOWED_HEADERS = [
+  "Accept",
+  "Authorization",
+  "Content-Type",
+  "Origin",
+  "X-Requested-With",
+];
 
 // Aplicação servida atrás de proxy na maioria dos ambientes de produção.
 app.set("trust proxy", 1);
@@ -25,12 +33,19 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
+      // Requisições sem Origin (curl, testes, server-to-server) são permitidas.
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (isAllowedOrigin(origin)) return callback(null, true);
 
       return callback(new HttpError(403, "Origem não autorizada por CORS."));
     },
+    methods: CORS_METHODS,
+    allowedHeaders: CORS_ALLOWED_HEADERS,
+    // Preflight respondido pelo próprio middleware (204) antes de chegar às rotas.
+    optionsSuccessStatus: 204,
+    // Cache do preflight no navegador/CDN da Vercel por 24h.
+    maxAge: 86400,
   }),
 );
 
