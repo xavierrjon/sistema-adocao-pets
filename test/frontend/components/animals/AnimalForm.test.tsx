@@ -70,9 +70,12 @@ function renderEditForm(
   return onSubmit;
 }
 
-async function fillCreateForm(user: ReturnType<typeof userEvent.setup>) {
+async function fillCreateForm(
+  user: ReturnType<typeof userEvent.setup>,
+  species = "Gato",
+) {
   await user.type(screen.getByLabelText(/^Nome/), "Amber");
-  await user.selectOptions(screen.getByLabelText(/^Espécie/), "Gato");
+  await user.selectOptions(screen.getByLabelText(/^Espécie/), species);
   await user.type(screen.getByLabelText(/^Raça/), "SRD");
   await user.selectOptions(screen.getByLabelText(/^Sexo/), "Femea");
   await user.selectOptions(screen.getByLabelText(/^Porte/), "Medio");
@@ -143,6 +146,19 @@ describe("AnimalForm", () => {
         city: "São Paulo",
         whatsapp: "11999999999",
       },
+      expect.objectContaining({ file: null, removeImage: false }),
+    );
+  });
+
+  it("permite cadastrar um animal da categoria Aves", async () => {
+    const user = userEvent.setup();
+    const onSubmit = renderCreateForm();
+
+    await fillCreateForm(user, "Ave");
+    await user.click(screen.getByRole("button", { name: "Cadastrar animal" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Amber", species: "Ave", breed: "SRD" }),
       expect.objectContaining({ file: null, removeImage: false }),
     );
   });
