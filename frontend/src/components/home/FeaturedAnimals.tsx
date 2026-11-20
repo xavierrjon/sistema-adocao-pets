@@ -1,14 +1,41 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimalGrid } from "@/components/animals/AnimalGrid";
 import { buttonClasses } from "@/components/ui/Button";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { getAnimals } from "@/services/animals";
 import type { Animal } from "@/types/animal";
 
-type FeaturedAnimalsProps = {
-  animals: Animal[];
-};
+/**
+ * Listagem em destaque da home. Carrega pelo navegador, como a página
+ * `/animais`: com `NEXT_PUBLIC_API_URL=/api`, a URL relativa só resolve
+ * via rewrite no cliente (o `fetch` do servidor não aceita URL relativa).
+ */
+export function FeaturedAnimals() {
+  const [animals, setAnimals] = useState<Animal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function FeaturedAnimals({ animals }: FeaturedAnimalsProps) {
+  useEffect(() => {
+    let active = true;
+
+    getAnimals()
+      .then((result) => {
+        if (active) setAnimals(result);
+      })
+      .catch(() => {
+        // A home continua disponível mesmo quando a API não responde.
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const featured = animals.filter((animal) => animal.status === "DISPONIVEL").slice(0, 6);
 
   return (
@@ -28,7 +55,7 @@ export function FeaturedAnimals({ animals }: FeaturedAnimalsProps) {
       </div>
 
       <div className="mt-8">
-        <AnimalGrid animals={featured} />
+        <AnimalGrid animals={featured} isLoading={isLoading} />
       </div>
     </section>
   );
