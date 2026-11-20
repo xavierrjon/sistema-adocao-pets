@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
-// Domínio da API publicada na Vercel (backend Express).
+// Domínio do backend Express publicado no Render.
 // O rewrite torna as chamadas de API same-origin no frontend publicado: a
 // sessão passa a ser um cookie first-party (exigido pelo iOS/Safari, que
 // bloqueia cookies de terceiros, e pela descontinuação deles no Chrome).
-const API_ORIGIN = "https://adoteja-api.vercel.app";
+const API_ORIGIN = "https://adoteja-api.onrender.com";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
