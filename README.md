@@ -72,12 +72,13 @@ CLOUDINARY_API_SECRET=sua-api-secret
 ```
 
 > `FRONTEND_URL` define as origens permitidas por CORS e pela checagem de Origin
-> usada contra CSRF. Aceita várias origens separadas por vírgula. As origens
-> publicadas `https://adoteja-murex.vercel.app` e `https://adoteja-am.vercel.app`
-> são permitidas por padrão (inclusive em produção), e `localhost` continua
-> liberado fora de produção. `COOKIE_SAME_SITE` pode ser `lax`, `strict` ou
-> `none`. Quando frontend e backend estiverem em domínios diferentes, use
-> `none` com `Secure` (produção/HTTPS) e, se necessário, defina `COOKIE_DOMAIN`.
+> usada contra CSRF. Aceita várias origens separadas por vírgula. A origem
+> publicada `https://adoteja-am.vercel.app` é permitida por padrão (inclusive em
+> produção), e `localhost` continua liberado fora de produção. `COOKIE_SAME_SITE`
+> pode ser `lax`, `strict` ou `none`. Em desenvolvimento local (mesma origem,
+> portas diferentes) use `lax`; use `none` com `Secure` quando as chamadas forem
+> cross-site e, se necessário, defina `COOKIE_DOMAIN`. No frontend publicado as
+> chamadas são same-origin (rewrite para a API), veja a seção de deploy.
 
 > `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` são
 > usados pelo backend para armazenar as fotos dos anúncios (obrigatórios para
@@ -304,18 +305,30 @@ A publicação do frontend é feita na **Vercel** (`develop` → ambiente de des
 
 ## Deploy na Vercel (CORS e cookies)
 
+No frontend, as requisições à API são **same-origin**: um `rewrite` em
+`frontend/next.config.ts` proxya `/api/*` para a API publicada
+(`https://adoteja-api.vercel.app`). Isso torna o cookie de sessão um cookie
+first-party do próprio domínio do frontend, o que é necessário porque
+`vercel.app` está na Public Suffix List (subdomínios distintos são sites
+diferentes) e navegadores como o Safari/iOS bloqueiam cookies de terceiros.
+No ambiente publicado, defina `NEXT_PUBLIC_API_URL=/api` (caminho relativo) no
+projeto do frontend. No desenvolvimento local, `NEXT_PUBLIC_API_URL` continua
+apontando para `http://localhost:3001/api` e não passa pelo rewrite.
+
 A API responde CORS com `credentials: true` apenas para as origens permitidas e
-trata o preflight `OPTIONS` (204) antes de chegar às rotas. As origens públicas
-`https://adoteja-murex.vercel.app` e `https://adoteja-am.vercel.app` já são
-liberadas pelo código; origens adicionais devem ser informadas em `FRONTEND_URL`
-(separadas por vírgula, sem barra final).
+trata o preflight `OPTIONS` (204) antes de chegar às rotas. A origem publicada
+`https://adoteja-am.vercel.app` já é liberada pelo código; origens adicionais
+devem ser informadas em `FRONTEND_URL` (separadas por vírgula, sem barra final).
 
 No projeto do backend na Vercel, confira as variáveis de ambiente:
 
-- `FRONTEND_URL` — origem exata do frontend publicado (ex.: `https://adoteja-murex.vercel.app`).
-- `COOKIE_SAME_SITE=none` — frontend e API ficam em subdomínios distintos de
-  `vercel.app`; sem isso o navegador não envia o cookie de sessão nas requisições
-  cross-site. Em produção o cookie já é marcado como `Secure` automaticamente.
+- `FRONTEND_URL` — origem exata do frontend publicado (ex.: `https://adoteja-am.vercel.app`).
+- `DATABASE_URL` — URL **pooled** do Postgres gerenciado (usada em runtime pelo
+  Prisma nas funções serverless).
+- `DIRECT_URL` — URL direta (sem pool), usada apenas pelo Prisma CLI/migrations.
+- `COOKIE_SAME_SITE=none` — mantém o cookie válido também em chamadas cross-site
+  (por exemplo, desenvolvimento local entre portas diferentes ou consumidores
+  externos). Em produção o cookie já é marcado como `Secure` automaticamente.
 - `NODE_ENV=production` — a Vercel define automaticamente.
 
 A configuração de CORS não guarda estado no processo: cada requisição é avaliada
