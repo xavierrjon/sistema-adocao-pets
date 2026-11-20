@@ -67,10 +67,11 @@ export function SearchBar({
       onSubmit={handleSubmit}
       role="search"
       aria-label="Buscar animais"
-      className={`flex flex-col gap-3 sm:flex-row ${className}`}
+      className={`flex items-center gap-2 sm:gap-3 ${className}`}
     >
-      <div className="relative flex-1">
-        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+      {/* No mobile o campo fica livre de ícones e a busca vira botão azul ao lado do filtro. */}
+      <div className="relative min-w-0 flex-1">
+        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 hidden h-5 w-5 -translate-y-1/2 text-slate-500 sm:block" aria-hidden="true" />
         <Input
           type="search"
           name="q"
@@ -78,7 +79,7 @@ export function SearchBar({
           onChange={(event) => handleChange(event.target.value)}
           placeholder={placeholder}
           aria-label="Buscar por nome, raça ou espécie"
-          className={`pl-11 ${query ? "pr-12" : "pr-5"}`}
+          className={`pl-4 sm:pl-11 ${query ? "pr-12" : "pr-4 sm:pr-5"}`}
         />
         {query && (
           <button
@@ -86,19 +87,29 @@ export function SearchBar({
             onClick={handleClear}
             aria-label="Limpar busca"
             title="Limpar busca"
-            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           >
             <CloseIcon className="h-4 w-4" />
           </button>
         )}
       </div>
-      <Button type="submit" variant="primary" className="sm:self-auto">
-        Buscar
+
+      <Button
+        type="submit"
+        variant="primary"
+        size="icon"
+        aria-label="Buscar"
+        className="shrink-0 sm:h-auto sm:w-auto sm:px-6 sm:py-3"
+      >
+        <SearchIcon className="h-5 w-5 sm:hidden" />
+        <span className="hidden sm:inline">Buscar</span>
       </Button>
+
       {onToggleFilters && (
         <Button
           type="button"
           variant={filtersOpen ? "secondary" : "outline"}
+          size="icon"
           onClick={onToggleFilters}
           aria-expanded={filtersOpen}
           aria-controls={filtersOpen ? "animal-filters" : undefined}
@@ -108,14 +119,19 @@ export function SearchBar({
               ? ` (${activeFilterCount} ${activeFilterCount === 1 ? "ativo" : "ativos"})`
               : "")
           }
-          className="sm:self-auto"
+          className="shrink-0 sm:h-auto sm:w-auto sm:px-6 sm:py-3"
         >
-          <FilterIcon className="h-4 w-4" />
-          Filtros
+          <FilterIcon className="h-5 w-5 sm:hidden" />
+          <FilterIcon className="hidden h-4 w-4 sm:block" />
+          <span className="hidden sm:inline">Filtros</span>
           {activeFilterCount > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-extrabold text-white">
-              {activeFilterCount}
-            </span>
+            <>
+              {/* No mobile, um ponto discreto sinaliza filtros ativos sem ocupar espaço. */}
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-brand-600 sm:hidden" />
+              <span className="hidden h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-extrabold text-white sm:inline-flex">
+                {activeFilterCount}
+              </span>
+            </>
           )}
         </Button>
       )}
