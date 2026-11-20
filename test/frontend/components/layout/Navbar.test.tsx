@@ -78,13 +78,41 @@ describe("Navbar", () => {
     render(<Navbar />);
 
     expect(screen.getByText("Olá, João")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Entrar" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Olá, João/ }));
+
     expect(screen.getByRole("link", { name: "Meus animais" })).toHaveAttribute("href", "/meus-animais");
     expect(screen.getByRole("link", { name: "Meu perfil" })).toHaveAttribute("href", "/perfil");
-    expect(screen.queryByRole("link", { name: "Entrar" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Sair" }));
 
     expect(authMocks.logout).toHaveBeenCalledOnce();
     await waitFor(() => expect(navigationMocks.push).toHaveBeenCalledWith("/"));
+  });
+
+  it("mantém os links da conta ocultos até abrir o menu do usuário", async () => {
+    authMocks.state.user = { id: "1", name: "Johnny Silva", email: "johnny@email.com" };
+    authMocks.state.isAuthenticated = true;
+
+    const user = userEvent.setup();
+    render(<Navbar />);
+
+    expect(screen.queryByRole("link", { name: "Meus animais" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Meu perfil" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
+
+    const accountButton = screen.getByRole("button", { name: /Olá, Johnny/ });
+    await user.click(accountButton);
+
+    expect(accountButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("navigation", { name: "Menu do usuário" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Meus animais" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Meu perfil" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(accountButton).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "Meus animais" })).not.toBeInTheDocument();
   });
 
   it("não afirma que a sessão foi encerrada se o logout falhar", async () => {

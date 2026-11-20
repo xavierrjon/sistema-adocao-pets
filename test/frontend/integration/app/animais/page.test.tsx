@@ -134,6 +134,25 @@ describe("Página de animais", () => {
     expect(lastFilters()).toEqual({ species: "Gato" });
   });
 
+  it("filtra a categoria Aves usando a espécie Ave", async () => {
+    const bird = makeAnimal({
+      id: "4",
+      name: "Pipoca",
+      species: "Ave",
+      breed: "Calopsita",
+    });
+    mockedGetAnimals.mockResolvedValue([bird]);
+
+    const user = userEvent.setup();
+    render(<AnimaisPage />);
+
+    await screen.findByText("Pipoca");
+    await openFilters(user);
+    await user.click(screen.getByRole("button", { name: /Aves/ }));
+
+    expect(lastFilters()).toEqual({ species: "Ave" });
+  });
+
   it("pesquisa pela API após o debounce", async () => {
     const user = userEvent.setup();
     render(<AnimaisPage />);
