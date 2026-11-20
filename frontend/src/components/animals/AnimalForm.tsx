@@ -9,8 +9,8 @@ import { ApiError } from "@/services/api";
 import { getCities, getStates, type IbgeState } from "@/services/location";
 import type { Animal } from "@/types/animal";
 
-/** Opções alinhadas aos enums aceitos pelo backend (schemas de animals). */
-export const ANIMAL_SPECIES_OPTIONS = ["Cachorro", "Gato", "Outro"] as const;
+/** Opções alinhadas às espécies aceitas pelo backend (schemas de animals). */
+export const ANIMAL_SPECIES_OPTIONS = ["Cachorro", "Gato", "Ave", "Outro"] as const;
 export const ANIMAL_SEX_OPTIONS = ["Macho", "Femea"] as const;
 export const ANIMAL_SIZE_OPTIONS = ["Pequeno", "Medio", "Grande"] as const;
 
