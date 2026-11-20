@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { CloseIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, CloseIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
 
 type SearchBarProps = {
   /** Valor controlado (opcional) para uso em páginas que filtram em memória. */
@@ -67,41 +67,44 @@ export function SearchBar({
       onSubmit={handleSubmit}
       role="search"
       aria-label="Buscar animais"
-      className={`flex flex-col gap-3 sm:flex-row ${className}`}
+      className={`flex items-center gap-2 sm:gap-3 ${className}`}
     >
-      <div className="relative flex-1">
-        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
-        <Input
-          type="search"
-          name="q"
-          value={query}
-          onChange={(event) => handleChange(event.target.value)}
-          placeholder={placeholder}
-          aria-label="Buscar por nome, raça ou espécie"
-          className={`pl-11 ${query ? "pr-12" : "pr-5"}`}
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={handleClear}
-            aria-label="Limpar busca"
-            title="Limpar busca"
-            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-          >
-            <CloseIcon className="h-4 w-4" />
-          </button>
-        )}
+      {/* No mobile a seta fica dentro do campo; no desktop ela volta a ser o botão ao lado. */}
+      <div className="relative flex min-w-0 flex-1 items-center gap-3">
+        <div className="relative min-w-0 flex-1">
+          <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+          <Input
+            type="search"
+            name="q"
+            value={query}
+            onChange={(event) => handleChange(event.target.value)}
+            placeholder={placeholder}
+            aria-label="Buscar por nome, raça ou espécie"
+            className={`pl-11 ${query ? "pr-22 sm:pr-12" : "pr-12 sm:pr-5"}`}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Limpar busca"
+              title="Limpar busca"
+              className="absolute right-12 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 sm:right-2"
+            >
+              <CloseIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          type="submit"
+          variant="primary"
+          size="icon"
+          aria-label="Buscar"
+          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 sm:static sm:h-auto sm:w-auto sm:translate-y-0 sm:px-6 sm:py-3"
+        >
+          <ArrowRightIcon className="h-5 w-5 sm:hidden" />
+          <span className="hidden sm:inline">Buscar</span>
+        </Button>
       </div>
-      <Button
-        type="submit"
-        variant="primary"
-        size="icon"
-        aria-label="Buscar"
-        className="sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:self-auto"
-      >
-        <SearchIcon className="h-5 w-5 sm:hidden" />
-        <span className="hidden sm:inline">Buscar</span>
-      </Button>
       {onToggleFilters && (
         <Button
           type="button"
@@ -116,7 +119,7 @@ export function SearchBar({
               ? ` (${activeFilterCount} ${activeFilterCount === 1 ? "ativo" : "ativos"})`
               : "")
           }
-          className="sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:self-auto"
+          className="sm:h-auto sm:w-auto sm:px-6 sm:py-3"
         >
           <FilterIcon className="h-5 w-5 sm:hidden" />
           <FilterIcon className="hidden h-4 w-4 sm:block" />

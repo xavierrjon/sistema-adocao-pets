@@ -237,10 +237,11 @@ describe("Página de animais", () => {
     await openFilters(user);
 
     await user.type(screen.getByLabelText("Buscar por nome, raça ou espécie"), "Toby");
+    await waitFor(() => expect(lastFilters()).toHaveProperty("q", "Toby"));
     await user.selectOptions(screen.getByLabelText("Sexo"), "Macho");
 
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
-    expect(lastFilters()).toEqual({ q: "Toby", sex: "Macho" });
+    await waitFor(() => expect(lastFilters()).toEqual({ q: "Toby", sex: "Macho" }));
+    expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado");
   });
 
   it("limpa todos os filtros e restaura a listagem", async () => {
