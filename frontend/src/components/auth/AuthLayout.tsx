@@ -13,7 +13,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
       <div className="mx-auto flex w-full max-w-2xl flex-col justify-center px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <AuthHeader className="lg:items-start" />
 
-        <div className="mt-8 text-center lg:text-left">
+        <div className="mt-6 text-center sm:mt-8 lg:text-left">
           <h1 className="text-3xl font-extrabold tracking-tight text-brand-950 sm:text-4xl">
             {title}
           </h1>
