@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ChevronDownIcon, CloseIcon, MenuIcon, UserIcon } from "@/components/ui/icons";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,13 +97,7 @@ export function Navbar() {
           className="flex shrink-0 items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           aria-label="AdoteJá — página inicial"
         >
-          <img
-            src="/images/logo-adoteja.svg"
-            alt="AdoteJá"
-            width={1920}
-            height={1080}
-            className="h-10 w-auto object-contain sm:h-11"
-          />
+          <BrandLogo />
         </Link>
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-1 md:flex">

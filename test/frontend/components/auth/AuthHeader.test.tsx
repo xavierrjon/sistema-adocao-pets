@@ -6,9 +6,8 @@ describe("AuthHeader", () => {
   it("usa a logo oficial da marca", () => {
     render(<AuthHeader />);
 
-    expect(screen.getByRole("img", { name: "AdoteJá" })).toHaveAttribute(
-      "src",
-      "/images/logo-adoteja.svg",
-    );
+    const logo = screen.getByRole("img", { name: "AdoteJá" });
+    expect(logo).toHaveAttribute("src", "/images/logo-adoteja.svg");
+    expect(logo).toHaveClass("h-21");
   });
 });
