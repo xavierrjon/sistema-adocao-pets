@@ -17,10 +17,7 @@ export const SESSION_DURATION = {
  * Mantidas explicitamente para que o deploy funcione mesmo se FRONTEND_URL
  * não estiver definida no ambiente da Vercel.
  */
-const PRODUCTION_ORIGINS = [
-  "https://adoteja-murex.vercel.app",
-  "https://adoteja-am.vercel.app",
-] as const;
+const PRODUCTION_ORIGINS = ["https://adoteja-am.vercel.app"] as const;
 
 /** Origens usadas apenas no desenvolvimento local. */
 const DEVELOPMENT_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;

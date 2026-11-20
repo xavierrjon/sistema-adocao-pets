@@ -11,7 +11,7 @@ vi.mock("../../../backend/src/lib/prisma", () => ({
 import app from "../../../backend/src/server";
 import { getAllowedOrigins, isAllowedOrigin } from "../../../backend/src/lib/auth";
 
-const PRODUCTION_ORIGIN = "https://adoteja-murex.vercel.app";
+const PRODUCTION_ORIGIN = "https://adoteja-am.vercel.app";
 const LOCAL_ORIGIN = "http://localhost:3000";
 
 afterEach(() => {
@@ -98,7 +98,6 @@ describe("getAllowedOrigins", () => {
     vi.stubEnv("NODE_ENV", "production");
 
     expect(getAllowedOrigins()).toContain(PRODUCTION_ORIGIN);
-    expect(getAllowedOrigins()).toContain("https://adoteja-am.vercel.app");
   });
 
   it("aceita várias origens em FRONTEND_URL e normaliza barras finais", () => {
@@ -112,7 +111,7 @@ describe("getAllowedOrigins", () => {
   it("não considera origens parecidas ou vazias", () => {
     expect(isAllowedOrigin(undefined)).toBe(false);
     expect(isAllowedOrigin("")).toBe(false);
-    expect(isAllowedOrigin("https://adoteja-murex.vercel.app.evil.example")).toBe(false);
-    expect(isAllowedOrigin("https://adoteja-murex.vercel.app.br")).toBe(false);
+    expect(isAllowedOrigin("https://adoteja-am.vercel.app.evil.example")).toBe(false);
+    expect(isAllowedOrigin("https://adoteja-am.vercel.app.br")).toBe(false);
   });
 });
