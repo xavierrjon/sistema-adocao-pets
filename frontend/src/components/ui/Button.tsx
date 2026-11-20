@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 
 export type ButtonVariant = "primary" | "secondary" | "outline";
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 type ButtonStyleOptions = {
   variant?: ButtonVariant;
@@ -22,6 +22,8 @@ const SIZES: Record<ButtonSize, string> = {
   sm: "px-4 py-2 text-sm",
   md: "px-6 py-3 text-sm",
   lg: "px-7 py-3.5 text-base",
+  // Área de toque de 44px para botões exibidos apenas com ícone.
+  icon: "h-11 w-11 p-0",
 };
 
 /** Estilos do botão, expostos para estilizar links e outros elementos com a mesma aparência. */

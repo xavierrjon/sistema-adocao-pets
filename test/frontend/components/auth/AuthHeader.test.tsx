@@ -8,6 +8,7 @@ describe("AuthHeader", () => {
 
     const logo = screen.getByRole("img", { name: "AdoteJá" });
     expect(logo).toHaveAttribute("src", "/images/logo-adoteja.svg");
-    expect(logo).toHaveClass("h-21");
+    // Nas telas de autenticação a logo é maior que a padrão (h-21) da navbar.
+    expect(logo).toHaveClass("h-24", "sm:h-32", "lg:h-36");
   });
 });

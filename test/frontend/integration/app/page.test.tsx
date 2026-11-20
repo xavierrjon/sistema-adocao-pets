@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeAnimal } from "@test/fixtures/animals";
 import Home from "@/app/page";
@@ -31,13 +31,27 @@ describe("Home", () => {
     ).toHaveAttribute("href", "/animais");
   });
 
-  it("exibe a busca e as categorias", () => {
+  it("não exibe busca, mas mantém as categorias em um carrossel", () => {
     render(<Home />);
 
-    expect(screen.getByRole("search")).toBeInTheDocument();
-    for (const category of ["Todos", "Cães", "Gatos", "Aves", "Outros"]) {
-      expect(screen.getByRole("link", { name: new RegExp(category) })).toBeInTheDocument();
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Buscar" })).not.toBeInTheDocument();
+
+    const categories = screen.getByRole("region", { name: "Categorias de animais" });
+    const list = within(categories).getByRole("list");
+    expect(list).toHaveClass("flex", "snap-x", "snap-mandatory", "overflow-x-auto", "pb-2");
+    for (const listItem of within(list).getAllByRole("listitem")) {
+      expect(listItem).toHaveClass("shrink-0", "snap-start");
     }
+    for (const category of ["Todos", "Cães", "Gatos", "Aves", "Outros"]) {
+      expect(within(list).getByRole("link", { name: new RegExp(category) })).toHaveAttribute(
+        "href",
+        `/animais?categoria=${encodeURIComponent(category)}`,
+      );
+    }
+    // A home mantém a hero, o carrossel e a pré-visualização dos animais.
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Animais disponíveis" })).toBeInTheDocument();
   });
 
   it("carrega os animais automaticamente, sem interação do usuário", async () => {
@@ -85,7 +99,7 @@ describe("Home", () => {
       expect(mockedGetAnimals).toHaveBeenCalled();
     });
     // A página continua renderizada; apenas a listagem fica vazia.
-    expect(screen.getByRole("search")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Encontrar animais 🐾" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText("Carregando animais...")).not.toBeInTheDocument();
     });
