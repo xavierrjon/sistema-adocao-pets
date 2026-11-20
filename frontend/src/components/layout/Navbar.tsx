@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import { Button, buttonClasses } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/Button";
 import { ChevronDownIcon, CloseIcon, MenuIcon, UserIcon } from "@/components/ui/icons";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -13,10 +13,7 @@ const NAV_LINKS = [
   { href: "/animais", label: "Animais" },
 ];
 
-const ACCOUNT_LINKS = [
-  { href: "/meus-animais", label: "Meus animais" },
-  { href: "/perfil", label: "Meu perfil" },
-];
+const ACCOUNT_LINKS = [{ href: "/perfil", label: "Meu perfil" }];
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -88,21 +85,35 @@ export function Navbar() {
   }
 
   const firstName = user?.name.trim().split(" ")[0] ?? "Usuário";
+  const navLinks = isAuthenticated
+    ? [...NAV_LINKS, { href: "/meus-animais", label: "Meus animais" }]
+    : NAV_LINKS;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex shrink-0 items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          onClick={() => setIsAccountMenuOpen(false)}
+          className={`flex items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 ${
+            isAuthenticated
+              ? "absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0"
+              : "shrink-0"
+          }`}
           aria-label="AdoteJá — página inicial"
         >
           <BrandLogo />
         </Link>
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map(({ href, label }) => (
-            <Link key={href} href={href} className={linkClasses(href)} aria-current={isLinkActive(href) ? "page" : undefined}>
+          {navLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setIsAccountMenuOpen(false)}
+              className={linkClasses(href)}
+              aria-current={isLinkActive(href) ? "page" : undefined}
+            >
               {label}
             </Link>
           ))}
@@ -112,7 +123,7 @@ export function Navbar() {
           {isLoading ? (
             <span aria-hidden="true" className="block h-9 w-24 animate-pulse rounded-full bg-slate-100" />
           ) : isAuthenticated ? (
-            <>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 sm:left-6 md:static md:translate-y-0">
               <div className="relative" ref={accountMenuRef}>
                 <button
                   type="button"
@@ -142,7 +153,7 @@ export function Navbar() {
                   <nav
                     id="account-menu"
                     aria-label="Menu do usuário"
-                    className="absolute right-0 top-full z-50 mt-2 w-52 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl shadow-slate-900/10"
+                    className="absolute left-0 top-full z-50 mt-2 w-52 origin-top-left rounded-2xl border border-slate-100 bg-white p-2 shadow-xl shadow-slate-900/10 md:left-auto md:right-0 md:origin-top-right"
                   >
                     <ul className="flex flex-col gap-1">
                       {ACCOUNT_LINKS.map(({ href, label }) => (
@@ -156,20 +167,21 @@ export function Navbar() {
                           </Link>
                         </li>
                       ))}
+                      <li className="mt-1 border-t border-slate-100 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          disabled={isLoggingOut}
+                          className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-bold text-brand-800 transition hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isLoggingOut ? "Saindo..." : "Sair"}
+                        </button>
+                      </li>
                     </ul>
                   </nav>
                 ) : null}
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-              >
-                {isLoggingOut ? "Saindo..." : "Sair"}
-              </Button>
-            </>
+            </div>
           ) : (
             <>
               <Link
@@ -212,11 +224,14 @@ export function Navbar() {
           className="border-t border-slate-100 bg-white px-4 pb-5 pt-2 md:hidden"
         >
           <ul className="flex flex-col gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
+            {navLinks.map(({ href, label }) => (
               <li key={href}>
                 <Link
                   href={href}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsAccountMenuOpen(false);
+                  }}
                   className={`${linkClasses(href)} flex w-full`}
                   aria-current={isLinkActive(href) ? "page" : undefined}
                 >
