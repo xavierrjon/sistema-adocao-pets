@@ -92,13 +92,21 @@ export function SearchBar({
           </button>
         )}
       </div>
-      <Button type="submit" variant="primary" className="sm:self-auto">
-        Buscar
+      <Button
+        type="submit"
+        variant="primary"
+        size="icon"
+        aria-label="Buscar"
+        className="sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:self-auto"
+      >
+        <SearchIcon className="h-5 w-5 sm:hidden" />
+        <span className="hidden sm:inline">Buscar</span>
       </Button>
       {onToggleFilters && (
         <Button
           type="button"
           variant={filtersOpen ? "secondary" : "outline"}
+          size="icon"
           onClick={onToggleFilters}
           aria-expanded={filtersOpen}
           aria-controls={filtersOpen ? "animal-filters" : undefined}
@@ -108,14 +116,19 @@ export function SearchBar({
               ? ` (${activeFilterCount} ${activeFilterCount === 1 ? "ativo" : "ativos"})`
               : "")
           }
-          className="sm:self-auto"
+          className="sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:self-auto"
         >
-          <FilterIcon className="h-4 w-4" />
-          Filtros
+          <FilterIcon className="h-5 w-5 sm:hidden" />
+          <FilterIcon className="hidden h-4 w-4 sm:block" />
+          <span className="hidden sm:inline">Filtros</span>
           {activeFilterCount > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-extrabold text-white">
-              {activeFilterCount}
-            </span>
+            <>
+              {/* No mobile, um ponto discreto sinaliza filtros ativos sem ocupar espaço. */}
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-brand-600 sm:hidden" />
+              <span className="hidden h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-extrabold text-white sm:inline-flex">
+                {activeFilterCount}
+              </span>
+            </>
           )}
         </Button>
       )}

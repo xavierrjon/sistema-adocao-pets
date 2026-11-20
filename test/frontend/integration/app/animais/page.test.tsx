@@ -170,6 +170,20 @@ describe("Página de animais", () => {
     expect(lastFilters()).toEqual({ q: "Toby" });
   });
 
+  it("aplica a busca ao enviar pelo botão compacto, sem esperar o debounce", async () => {
+    const user = userEvent.setup();
+    render(<AnimaisPage />);
+
+    await screen.findByText("Amber");
+
+    await user.type(screen.getByLabelText("Buscar por nome, raça ou espécie"), "Toby");
+    await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+    expect(await screen.findByText("Toby")).toBeInTheDocument();
+    expect(screen.queryByText("Amber")).not.toBeInTheDocument();
+    expect(lastFilters()).toEqual({ q: "Toby" });
+  });
+
   it("combina espécie, sexo e porte na mesma consulta", async () => {
     const user = userEvent.setup();
     render(<AnimaisPage />);
