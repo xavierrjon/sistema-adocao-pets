@@ -2,20 +2,8 @@ import { CategoryList } from "@/components/home/CategoryList";
 import { FeaturedAnimals } from "@/components/home/FeaturedAnimals";
 import { Hero } from "@/components/home/Hero";
 import { SearchBar } from "@/components/home/SearchBar";
-import { getAnimals } from "@/services/animals";
-import type { Animal } from "@/types/animal";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  let animals: Animal[] = [];
-
-  try {
-    animals = await getAnimals();
-  } catch {
-    // A home continua disponível mesmo quando a API não responde.
-  }
-
+export default function Home() {
   return (
     <>
       <Hero />
@@ -28,7 +16,8 @@ export default async function Home() {
         <CategoryList asLinks />
       </section>
 
-      <FeaturedAnimals animals={animals} />
+      {/* A listagem carrega pelo cliente (ver FeaturedAnimals). */}
+      <FeaturedAnimals />
     </>
   );
 }
