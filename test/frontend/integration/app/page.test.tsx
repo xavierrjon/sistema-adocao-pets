@@ -31,13 +31,17 @@ describe("Home", () => {
     ).toHaveAttribute("href", "/animais");
   });
 
-  it("exibe a busca e as categorias", () => {
+  it("não exibe busca, botão de buscar ou badges de filtragem", () => {
     render(<Home />);
 
-    expect(screen.getByRole("search")).toBeInTheDocument();
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Buscar" })).not.toBeInTheDocument();
     for (const category of ["Todos", "Cães", "Gatos", "Aves", "Outros"]) {
-      expect(screen.getByRole("link", { name: new RegExp(category) })).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: new RegExp(category) })).not.toBeInTheDocument();
     }
+    // A home mantém apenas a hero e a pré-visualização dos animais.
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Animais disponíveis" })).toBeInTheDocument();
   });
 
   it("carrega os animais automaticamente, sem interação do usuário", async () => {
@@ -85,7 +89,7 @@ describe("Home", () => {
       expect(mockedGetAnimals).toHaveBeenCalled();
     });
     // A página continua renderizada; apenas a listagem fica vazia.
-    expect(screen.getByRole("search")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Encontrar animais 🐾" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText("Carregando animais...")).not.toBeInTheDocument();
     });
