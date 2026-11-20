@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-export const ANIMAL_SPECIES = ["Cachorro", "Gato", "Outro"] as const;
+/** Espécies aceitas no cadastro e na edição de anúncios. */
+export const ANIMAL_SPECIES = ["Cachorro", "Gato", "Ave", "Outro"] as const;
 export const ANIMAL_SEXES = ["Macho", "Femea"] as const;
 export const ANIMAL_SIZES = ["Pequeno", "Medio", "Grande"] as const;
 export const ANIMAL_STATUSES = ["DISPONIVEL", "EM_PROCESSO", "ADOTADO"] as const;
 
 /**
- * Espécies aceitas na filtragem da vitrine. "Ave" não é aceita no cadastro,
- * mas existe em anúncios antigos e na categoria "Aves" da home; "Outro"
- * representa todas as demais espécies (por exemplo, coelhos).
+ * Espécies aceitas na filtragem da vitrine. "Ave" atende à categoria "Aves"
+ * da home; "Outro" representa todas as demais espécies (por exemplo, coelhos).
  */
 export const ANIMAL_SPECIES_FILTER = ["Cachorro", "Gato", "Ave", "Outro"] as const;
 

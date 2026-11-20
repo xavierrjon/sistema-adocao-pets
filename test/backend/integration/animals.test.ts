@@ -240,7 +240,7 @@ describe("GET /api/animals", () => {
     );
   });
 
-  it("aceita a categoria legada Ave na filtragem", async () => {
+  it("aceita a espécie Ave na filtragem", async () => {
     prismaMock.animal.findMany.mockResolvedValue([]);
 
     const response = await request(app).get("/api/animals?species=Ave");
@@ -399,6 +399,23 @@ describe("POST /api/animals", () => {
     expect(locationMocks.assertValidLocation).toHaveBeenCalledWith("SP", "São Paulo");
     expect(prismaMock.animal.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ ...validBody, userId: USER_ID }),
+    });
+  });
+
+  it("aceita e persiste a espécie Ave no cadastro", async () => {
+    const bird = { ...animal, species: "Ave", name: "Pipoca", breed: "Calopsita" };
+    prismaMock.animal.create.mockResolvedValue(bird);
+
+    const response = await request(app)
+      .post("/api/animals")
+      .set("Cookie", COOKIE)
+      .set("Origin", ORIGIN)
+      .send({ ...validBody, species: "Ave", name: bird.name, breed: bird.breed });
+
+    expect(response.status).toBe(201);
+    expect(response.body.species).toBe("Ave");
+    expect(prismaMock.animal.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ species: "Ave", userId: USER_ID }),
     });
   });
 

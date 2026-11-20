@@ -1,6 +1,7 @@
 /** Documentação OpenAPI da API AdoteJá. */
 
 import { SESSION_COOKIE_NAME } from "../lib/auth";
+import { ANIMAL_SPECIES, ANIMAL_SPECIES_FILTER } from "../schemas/animal.schema";
 
 const idParam = {
   name: "id",
@@ -113,7 +114,7 @@ const animalListQueryParams = [
     in: "query" as const,
     required: false,
     description:
-      "Filtra por espécie. `Ave` atende anúncios antigos da categoria Aves e `Outro` agrupa " +
+      "Filtra por espécie. `Ave` corresponde à categoria Aves e `Outro` agrupa " +
       "todas as espécies que não são cães, gatos nem aves (por exemplo, coelhos). " +
       "Pode ser combinado com os demais parâmetros.",
     schema: { $ref: "#/components/schemas/AnimalSpeciesFilter" },
@@ -705,14 +706,14 @@ export const swaggerSpec = {
       },
       AnimalSpecies: {
         type: "string",
-        enum: ["Cachorro", "Gato", "Outro"],
+        enum: [...ANIMAL_SPECIES],
         example: "Gato",
       },
       AnimalSpeciesFilter: {
         type: "string",
-        enum: ["Cachorro", "Gato", "Ave", "Outro"],
+        enum: [...ANIMAL_SPECIES_FILTER],
         description:
-          "Espécie usada na filtragem. `Ave` atende anúncios antigos da categoria Aves e " +
+          "Espécie usada na filtragem. `Ave` corresponde à categoria Aves e " +
           "`Outro` agrupa todas as espécies que não são cães, gatos nem aves.",
         example: "Gato",
       },
