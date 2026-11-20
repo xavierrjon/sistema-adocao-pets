@@ -170,6 +170,20 @@ describe("Página de animais", () => {
     expect(lastFilters()).toEqual({ q: "Toby" });
   });
 
+  it("aplica a busca ao enviar pelo botão compacto, sem esperar o debounce", async () => {
+    const user = userEvent.setup();
+    render(<AnimaisPage />);
+
+    await screen.findByText("Amber");
+
+    await user.type(screen.getByLabelText("Buscar por nome, raça ou espécie"), "Toby");
+    await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+    expect(await screen.findByText("Toby")).toBeInTheDocument();
+    expect(screen.queryByText("Amber")).not.toBeInTheDocument();
+    expect(lastFilters()).toEqual({ q: "Toby" });
+  });
+
   it("combina espécie, sexo e porte na mesma consulta", async () => {
     const user = userEvent.setup();
     render(<AnimaisPage />);
@@ -223,10 +237,11 @@ describe("Página de animais", () => {
     await openFilters(user);
 
     await user.type(screen.getByLabelText("Buscar por nome, raça ou espécie"), "Toby");
+    await waitFor(() => expect(lastFilters()).toHaveProperty("q", "Toby"));
     await user.selectOptions(screen.getByLabelText("Sexo"), "Macho");
 
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado"));
-    expect(lastFilters()).toEqual({ q: "Toby", sex: "Macho" });
+    await waitFor(() => expect(lastFilters()).toEqual({ q: "Toby", sex: "Macho" }));
+    expect(screen.getByRole("status")).toHaveTextContent("1 animal encontrado");
   });
 
   it("limpa todos os filtros e restaura a listagem", async () => {
