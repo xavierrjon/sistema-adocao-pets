@@ -8,6 +8,8 @@ type CategoryListProps = {
   onSelect?: (category: AnimalCategory) => void;
   /** Renderiza os itens como links para `/animais?categoria=...` (usado na home). */
   asLinks?: boolean;
+  /** Transforma a lista em um carrossel horizontal com snap (usado na home). */
+  scrollable?: boolean;
   className?: string;
 };
 
@@ -21,12 +23,23 @@ function baseChipClasses(isActive: boolean): string {
   ].join(" ");
 }
 
-export function CategoryList({ active, onSelect, asLinks = false, className = "" }: CategoryListProps) {
+export function CategoryList({
+  active,
+  onSelect,
+  asLinks = false,
+  scrollable = false,
+  className = "",
+}: CategoryListProps) {
+  const listClasses = scrollable
+    ? `flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 ${className}`
+    : `flex flex-wrap gap-2 ${className}`;
+  const itemClasses = scrollable ? "shrink-0 snap-start" : "";
+
   if (asLinks) {
     return (
-      <ul className={`flex flex-wrap gap-2 ${className}`}>
+      <ul className={listClasses}>
         {ANIMAL_CATEGORIES.map(({ label, icon }) => (
-          <li key={label}>
+          <li key={label} className={itemClasses}>
             <Link href={`/animais?categoria=${encodeURIComponent(label)}`} className={baseChipClasses(label === "Todos")}>
               <span aria-hidden="true">{icon}</span>
               {label}
@@ -38,12 +51,12 @@ export function CategoryList({ active, onSelect, asLinks = false, className = ""
   }
 
   return (
-    <ul className={`flex flex-wrap gap-2 ${className}`}>
+    <ul className={listClasses}>
       {ANIMAL_CATEGORIES.map(({ label, icon }) => {
         const isActive = label === active;
 
         return (
-          <li key={label}>
+          <li key={label} className={itemClasses}>
             <button
               type="button"
               onClick={() => onSelect?.(label)}

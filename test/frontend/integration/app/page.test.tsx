@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeAnimal } from "@test/fixtures/animals";
 import Home from "@/app/page";
@@ -31,15 +31,25 @@ describe("Home", () => {
     ).toHaveAttribute("href", "/animais");
   });
 
-  it("não exibe busca, botão de buscar ou badges de filtragem", () => {
+  it("não exibe busca, mas mantém as categorias em um carrossel", () => {
     render(<Home />);
 
     expect(screen.queryByRole("search")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Buscar" })).not.toBeInTheDocument();
-    for (const category of ["Todos", "Cães", "Gatos", "Aves", "Outros"]) {
-      expect(screen.queryByRole("link", { name: new RegExp(category) })).not.toBeInTheDocument();
+
+    const categories = screen.getByRole("region", { name: "Categorias de animais" });
+    const list = within(categories).getByRole("list");
+    expect(list).toHaveClass("flex", "snap-x", "snap-mandatory", "overflow-x-auto", "pb-2");
+    for (const listItem of within(list).getAllByRole("listitem")) {
+      expect(listItem).toHaveClass("shrink-0", "snap-start");
     }
-    // A home mantém apenas a hero e a pré-visualização dos animais.
+    for (const category of ["Todos", "Cães", "Gatos", "Aves", "Outros"]) {
+      expect(within(list).getByRole("link", { name: new RegExp(category) })).toHaveAttribute(
+        "href",
+        `/animais?categoria=${encodeURIComponent(category)}`,
+      );
+    }
+    // A home mantém a hero, o carrossel e a pré-visualização dos animais.
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Animais disponíveis" })).toBeInTheDocument();
   });

@@ -26,17 +26,18 @@ describe("SearchBar", () => {
     const searchButton = screen.getByRole("button", { name: "Buscar" });
     expect(searchButton).toHaveClass(
       "absolute",
-      "right-1",
-      "h-10",
-      "w-10",
+      "right-1.5",
+      "h-8",
+      "w-8",
       "sm:static",
       "sm:h-auto",
       "sm:w-auto",
       "sm:px-6",
     );
+    expect(searchButton.querySelector("svg")).toHaveClass("h-4", "w-4", "sm:hidden");
     expect(searchButton.querySelector("path")).toHaveAttribute("d", "M5 12h14");
     expect(searchButton.querySelector("span")).toHaveClass("hidden", "sm:inline");
-    expect(screen.getByRole("searchbox")).toHaveClass("pr-12", "sm:pr-5");
+    expect(screen.getByRole("searchbox")).toHaveClass("pr-11", "sm:pr-5");
 
     const filtersButton = screen.getByRole("button", { name: "Mostrar filtros" });
     expect(filtersButton).toHaveClass("h-11", "w-11", "p-0", "sm:h-auto", "sm:w-auto", "sm:px-6");
@@ -47,8 +48,13 @@ describe("SearchBar", () => {
   it("desloca o botão de limpar para ao lado da seta quando há termo", () => {
     render(<SearchBar value="Toby" onChange={vi.fn()} />);
 
-    expect(screen.getByRole("button", { name: "Limpar busca" })).toHaveClass("right-12", "sm:right-2");
-    expect(screen.getByRole("searchbox")).toHaveClass("pr-22", "sm:pr-12");
+    expect(screen.getByRole("button", { name: "Limpar busca" })).toHaveClass(
+      "right-10",
+      "h-8",
+      "w-8",
+      "sm:right-2",
+    );
+    expect(screen.getByRole("searchbox")).toHaveClass("pr-20", "sm:pr-12");
   });
 
   it("mantém o indicador de filtros ativos no botão compacto", () => {

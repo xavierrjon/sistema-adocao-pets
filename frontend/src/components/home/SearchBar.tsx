@@ -80,7 +80,7 @@ export function SearchBar({
             onChange={(event) => handleChange(event.target.value)}
             placeholder={placeholder}
             aria-label="Buscar por nome, raça ou espécie"
-            className={`pl-11 ${query ? "pr-22 sm:pr-12" : "pr-12 sm:pr-5"}`}
+            className={`pl-11 ${query ? "pr-20 sm:pr-12" : "pr-11 sm:pr-5"}`}
           />
           {query && (
             <button
@@ -88,7 +88,7 @@ export function SearchBar({
               onClick={handleClear}
               aria-label="Limpar busca"
               title="Limpar busca"
-              className="absolute right-12 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 sm:right-2"
+              className="absolute right-10 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 sm:right-2"
             >
               <CloseIcon className="h-4 w-4" />
             </button>
@@ -99,9 +99,9 @@ export function SearchBar({
           variant="primary"
           size="icon"
           aria-label="Buscar"
-          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 sm:static sm:h-auto sm:w-auto sm:translate-y-0 sm:px-6 sm:py-3"
+          className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 sm:static sm:h-auto sm:w-auto sm:translate-y-0 sm:px-6 sm:py-3"
         >
-          <ArrowRightIcon className="h-5 w-5 sm:hidden" />
+          <ArrowRightIcon className="h-4 w-4 sm:hidden" />
           <span className="hidden sm:inline">Buscar</span>
         </Button>
       </div>
