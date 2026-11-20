@@ -15,48 +15,59 @@ describe("SearchBar", () => {
     routerMocks.push.mockReset();
   });
 
-  it("mantém campo, seta de buscar e filtro na mesma linha no mobile", () => {
+  it("mantém campo, busca e filtro na mesma linha no mobile", () => {
     render(<SearchBar onToggleFilters={vi.fn()} />);
 
     const form = screen.getByRole("search");
     expect(form).toHaveClass("flex", "items-center", "gap-2", "sm:gap-3");
     expect(form).not.toHaveClass("flex-col");
 
-    // A seta fica sobreposta ao campo, alinhada à direita.
+    // A lupa sai do campo e vira o botão azul ao lado do filtro.
     const searchButton = screen.getByRole("button", { name: "Buscar" });
     expect(searchButton).toHaveClass(
-      "absolute",
-      "right-1.5",
-      "h-8",
-      "w-8",
-      "sm:static",
+      "h-11",
+      "w-11",
+      "p-0",
+      "shrink-0",
+      "sm:h-auto",
+      "sm:w-auto",
+      "sm:px-6",
+      "sm:py-3",
+    );
+    expect(searchButton).not.toHaveClass("absolute");
+    expect(searchButton.querySelector("svg")).toHaveClass("h-5", "w-5", "sm:hidden");
+    expect(searchButton.querySelector("circle")).toHaveAttribute("cx", "11");
+    expect(searchButton.querySelector("path")).toHaveAttribute("d", "m21 21-4.35-4.35");
+    expect(searchButton.querySelector("span")).toHaveClass("hidden", "sm:inline");
+
+    const searchbox = screen.getByRole("searchbox");
+    expect(searchbox).toHaveClass("pl-4", "sm:pl-11", "pr-4", "sm:pr-5");
+    // A lupa dentro do campo só aparece a partir do desktop.
+    expect(searchbox.parentElement?.querySelector("svg")).toHaveClass("hidden", "sm:block");
+
+    const filtersButton = screen.getByRole("button", { name: "Mostrar filtros" });
+    expect(filtersButton).toHaveClass(
+      "h-11",
+      "w-11",
+      "p-0",
+      "shrink-0",
       "sm:h-auto",
       "sm:w-auto",
       "sm:px-6",
     );
-    expect(searchButton).not.toHaveClass("h-11", "w-11");
-    expect(searchButton).toHaveClass("p-0");
-    expect(searchButton.querySelector("svg")).toHaveClass("h-4", "w-4", "sm:hidden");
-    expect(searchButton.querySelector("path")).toHaveAttribute("d", "M5 12h14");
-    expect(searchButton.querySelector("span")).toHaveClass("hidden", "sm:inline");
-    expect(screen.getByRole("searchbox")).toHaveClass("pr-11", "sm:pr-5");
-
-    const filtersButton = screen.getByRole("button", { name: "Mostrar filtros" });
-    expect(filtersButton).toHaveClass("h-11", "w-11", "p-0", "sm:h-auto", "sm:w-auto", "sm:px-6");
     expect(filtersButton.querySelectorAll("svg")[0]).toHaveClass("sm:hidden");
     expect(filtersButton.querySelectorAll("svg")[1]).toHaveClass("hidden", "sm:block");
   });
 
-  it("desloca o botão de limpar para ao lado da seta quando há termo", () => {
+  it("mantém o botão de limpar dentro do campo quando há termo", () => {
     render(<SearchBar value="Toby" onChange={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: "Limpar busca" })).toHaveClass(
-      "right-10",
+      "right-2",
       "h-8",
       "w-8",
-      "sm:right-2",
     );
-    expect(screen.getByRole("searchbox")).toHaveClass("pr-20", "sm:pr-12");
+    expect(screen.getByRole("searchbox")).toHaveClass("pr-12");
   });
 
   it("mantém o indicador de filtros ativos no botão compacto", () => {
@@ -74,7 +85,7 @@ describe("SearchBar", () => {
     expect(badge).toHaveClass("hidden", "sm:inline-flex");
   });
 
-  it("envia a busca ao clicar na seta", async () => {
+  it("envia a busca ao clicar no botão de buscar", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
 
