@@ -12,6 +12,7 @@ import {
   AnimalDetailsLoading,
   AnimalDetailsNotFound,
 } from "@/components/animals/AnimalDetailsStates";
+import { ShareAnimal } from "@/components/animals/ShareAnimal";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { formatAnimalLocation } from "@/lib/animal-location";
 import { speciesArticle } from "@/lib/species";
@@ -94,7 +95,12 @@ export default function AnimalDetailsPage() {
         </div>
 
         <header className="space-y-3">
-          <h1 className="text-3xl font-extrabold tracking-tight text-brand-950 sm:text-4xl">{animal.name}</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-3xl font-extrabold tracking-tight text-brand-950 sm:text-4xl">
+              {animal.name}
+            </h1>
+            <ShareAnimal animalId={animal.id} animalName={animal.name} />
+          </div>
           <p className="font-semibold text-slate-600">
             {animal.species} · {animal.breed}
           </p>
