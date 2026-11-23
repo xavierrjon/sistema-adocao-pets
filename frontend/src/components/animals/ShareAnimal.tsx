@@ -103,7 +103,9 @@ export function ShareAnimal({ animalId, animalName }: ShareAnimalProps) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-3">
+    /* relative + shrink-0: o wrapper tem o tamanho do botão; o feedback
+       fica em posição absoluta e nunca interfere no layout do nome. */
+    <div className="relative shrink-0">
       <Button
         variant="outline"
         size="icon"
@@ -126,13 +128,19 @@ export function ShareAnimal({ animalId, animalName }: ShareAnimalProps) {
       </Button>
 
       {feedback?.kind === "copied" ? (
-        <p role="status" className="text-right text-sm font-semibold text-brand-700">
+        <div
+          role="status"
+          className="absolute right-0 top-full z-10 mt-2 whitespace-nowrap rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700 shadow-sm ring-1 ring-brand-100"
+        >
           Link copiado!
-        </p>
+        </div>
       ) : null}
 
       {feedback?.kind === "manual" ? (
-        <div className="w-full max-w-md rounded-2xl bg-slate-50 px-4 py-3 text-left" role="status">
+        <div
+          role="status"
+          className="absolute right-0 top-full z-10 mt-2 w-72 rounded-2xl bg-slate-50 px-4 py-3 text-left shadow-sm ring-1 ring-slate-100"
+        >
           <p className="text-sm font-semibold text-brand-950">
             {feedback.reason === "failed"
               ? "Não foi possível copiar o link automaticamente."
