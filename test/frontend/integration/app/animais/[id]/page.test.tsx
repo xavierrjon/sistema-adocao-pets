@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/api";
@@ -115,5 +115,39 @@ describe("Página de detalhes do animal", () => {
 
     expect(await screen.findByRole("heading", { name: "Amber", level: 1 })).toBeInTheDocument();
     expect(mockedGetAnimalById).toHaveBeenCalledTimes(2);
+  });
+
+  it("exibe o botão de compartilhar o anúncio", async () => {
+    render(<AnimalDetailsPage />);
+
+    expect(
+      await screen.findByRole("button", { name: "Compartilhar anúncio" }),
+    ).toBeInTheDocument();
+  });
+
+  it("aciona o compartilhamento nativo com os dados do animal visualizado", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window.navigator, "share", {
+      value: share,
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      const user = userEvent.setup();
+      render(<AnimalDetailsPage />);
+
+      await user.click(await screen.findByRole("button", { name: "Compartilhar anúncio" }));
+
+      await waitFor(() =>
+        expect(share).toHaveBeenCalledWith({
+          title: animal.name,
+          text: `Conheça o anúncio de ${animal.name} no AdoteJá!`,
+          url: `http://localhost:3000/animais/${animal.id}`,
+        }),
+      );
+    } finally {
+      delete (window.navigator as unknown as Record<string, unknown>).share;
+    }
   });
 });
