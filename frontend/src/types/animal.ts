@@ -36,15 +36,6 @@ export type AnimalContact = {
   whatsapp: string;
 };
 
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  whatsapp: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type CreateAnimalInput = Pick<
   Animal,
   "name" | "species" | "breed" | "sex" | "size" | "description"

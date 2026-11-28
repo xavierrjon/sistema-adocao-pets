@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { AnimalImageField } from "./AnimalImageField";
 import { detailsToFieldErrors } from "@/lib/form-errors";
 import { ApiError } from "@/services/api";
@@ -10,9 +9,9 @@ import { getCities, getStates, type IbgeState } from "@/services/location";
 import type { Animal } from "@/types/animal";
 
 /** Opções alinhadas às espécies aceitas pelo backend (schemas de animals). */
-export const ANIMAL_SPECIES_OPTIONS = ["Cachorro", "Gato", "Ave", "Outro"] as const;
-export const ANIMAL_SEX_OPTIONS = ["Macho", "Femea"] as const;
-export const ANIMAL_SIZE_OPTIONS = ["Pequeno", "Medio", "Grande"] as const;
+const ANIMAL_SPECIES_OPTIONS = ["Cachorro", "Gato", "Ave", "Outro"] as const;
+const ANIMAL_SEX_OPTIONS = ["Macho", "Femea"] as const;
+const ANIMAL_SIZE_OPTIONS = ["Pequeno", "Medio", "Grande"] as const;
 
 const WHATSAPP_PATTERN = /^\d{10,11}$/;
 const NAME_MAX_LENGTH = 60;
