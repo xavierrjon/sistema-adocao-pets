@@ -6,10 +6,6 @@ import type {
 } from "@/types/animal";
 import { request } from "./api";
 
-export type HealthResponse = {
-  status: string;
-};
-
 /** Filtros aceitos pela listagem pública (`GET /animals`). */
 export type AnimalListFilters = {
   /** Pesquisa por nome, raça, descrição ou espécie. */
@@ -18,10 +14,6 @@ export type AnimalListFilters = {
   sex?: string;
   size?: string;
 };
-
-export function getHealth(): Promise<HealthResponse> {
-  return request<HealthResponse>("/health");
-}
 
 export function getAnimals(filters: AnimalListFilters = {}): Promise<Animal[]> {
   const params = new URLSearchParams();
